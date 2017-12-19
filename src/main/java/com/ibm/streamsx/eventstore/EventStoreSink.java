@@ -103,13 +103,11 @@ import java.io.StringWriter;
 
 public class EventStoreSink extends AbstractOperator implements StateHandler {
     /* begin_generated_IBM_copyright_code */
-    public static final String IBM_COPYRIGHT = " Licensed Materials-Property of IBM                              "
-            + " 5724-Y95                                                        "
-            + " (C) Copyright IBM Corp.  2009, 2009    All Rights Reserved.     "
-            + " US Government Users Restricted Rights - Use, duplication or     "
-            + " disclosure restricted by GSA ADP Schedule Contract with         "
-            + " IBM Corp.                                                       "
-            + "                                                                 ";
+    public static final String IBM_COPYRIGHT = 
+	"/*******************************************************************************" +
+	"* Copyright (C) 2017, International Business Machines Corporation" +
+	"* All Rights Reserved" +
+	"*******************************************************************************/";
 
     Logger log = Logger.getLogger(this.getClass());
 
