@@ -32,6 +32,8 @@ Currently, this toolkit contains one operator: a file sink operator called Event
 
 To use this operator, you must have an existing IBM Db2 Event Store database, and the IBM Db2 Event Store cluster or server must be running. 
 
+You can find precompiled EventStoreSink toolkits for various IBM Db2 Event Store RELEASES here:
+<https://github.com/IBMStreams/streamsx.eventstore/releases>
 
 # EventStoreSink
 
