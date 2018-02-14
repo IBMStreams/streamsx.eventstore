@@ -179,12 +179,13 @@ On your IBM Streams system, either download the precomipled toolkit that corresp
 
   **Note:** If you clone the repository, you might need to edit the `build.sbt` file that is used to compile so that the IBM Db2 Event Store client JAR file corresponds to the IBM Db2 Event Store release where you want to insert data. For example to get the client JAR for IBM Db2 Event Store Enterprise Edition from Maven, the `build.sbt` file has the line:
   
-  `"com.ibm.event” % “ibm-db2-event-store-client” % “1.1.0"`
+  `"com.ibm.event” % “ibm-db2-eventstore-client” % “1.1.0"`
 
-To use IBM Db2 Event Store Developer Edition version 1.1.2, comment out `"com.ibm.event” % “ibm-db2-event-store-client” % “1.1.0"` and uncomment the following line:
+To use IBM Db2 Event Store Developer Edition version 1.1.2, comment out `"com.ibm.event” % “ibm-db2-eventstore-client” % “1.1.0"` and uncomment the following line:
 
-  `“com.ibm.event” % “ibm-db2-event-store-desktop-client” % “1.1.2”`
+  `“com.ibm.event” % “ibm-db2-eventstore-desktop-client” % “1.1.2”`
   
+Note there are other editions that reside on Maven as well, e.g., Enterprise 1.1.1 and Developer 1.1.4.
 
 ## Setting up the reference to the IBM Db2 Event Store daemon on your virtual machine
 

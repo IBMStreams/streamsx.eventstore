@@ -70,6 +70,11 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
   var nullMap : Map[String, Any] = Map.empty[String, Any]
   var conversionFunctionMap : scala.collection.mutable.HashMap[Int,(Tuple, Int) => Any] = null
 
+  import org.apache.log4j.{Level, LogManager}
+  val logLevel = LogManager.getRootLogger().getLevel()
+  log.info("Root logger level = " + logLevel)
+  LogManager.getLogger("com.ibm.event").setLevel(logLevel)
+
  try {
      connectToDatabase(true)
 
