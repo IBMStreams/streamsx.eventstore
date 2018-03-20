@@ -108,6 +108,10 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
      log.info( "EventStore null map is: " + nullMap)
      validateSchemas(streamSchema, tableToInsert.schema)
      conversionFunctionMap = ConversionAPIObject.createConversionFunctions(streamSchema)
+
+     // Remove columns in the nullMap that are not nullable
+     nullMap = removeNonNullables(nullMap, tableToInsert.schema)
+     log.info( "EventStore null map after removal of non-nullable columns is: " + nullMap)
   } catch {
      case e: Exception => {
 	if( context == null ){
@@ -170,6 +174,19 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
         Map.empty[String, Any]
       }
     }
+  }
+
+  // Remove columns in nullMap that are non-nullable
+  def removeNonNullables(oldNullMap: Map[String, Any], tableSchema: StructType): Map[String, Any] = {
+    var newNullMap = oldNullMap
+    if( !newNullMap.isEmpty ){
+      for( field <- tableSchema.fields ){
+        if( !field.nullable ){
+      	  newNullMap = newNullMap.filterKeys(_ != field.name)
+	}
+      }
+    }
+    newNullMap
   }
 
   // Make sure that the stream schema and the table schemas are of the same data types in the 
