@@ -96,6 +96,13 @@
         <cardinality>1</cardinality>
       </parameter>
       <parameter>
+        <name>frontEndConnectionFlag</name>
+        <description>Set to true to connect through a Secure Gateway for Event Store Enterprise Edition version >= 1.1.2 and Developer Edition version > 1.1.4.</description>
+        <optional>true</optional>
+        <type>boolean</type>
+        <cardinality>1</cardinality>
+      </parameter>
+      <parameter>
         <name>preserveOrder</name>
         <description>Preserve order of tuples if true</description>
         <optional>true</optional>

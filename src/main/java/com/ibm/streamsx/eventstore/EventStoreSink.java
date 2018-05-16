@@ -117,6 +117,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     String databaseName = null;
     String tableName = null;
     String connectionString = null;
+    boolean frontEndConnectionFlag = false;
     String eventStoreUser = null;
     String eventStorePassword = null;
     String partitioningKey = "";
@@ -444,7 +445,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                         tableName == null || tableName == "" ){
                     log.error( "No database or table name was given so we cannot carry out the insert");
                     impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName,
-                            connectionString, streamSchema, nullMapString,
+                            connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
                             partitioningKey, primaryKey);
                 }
@@ -452,7 +453,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     log.info( "databaseName= " + databaseName +
                             " tabename= " + tableName );
                     impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName,
-                            connectionString, streamSchema, nullMapString,
+                            connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
                             partitioningKey, primaryKey);
                 }
@@ -776,6 +777,21 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             description="Set the IBM Db2 Event Store connection string: <IP>:<port>")
     public synchronized void setConnectionString( String connectString ) {
         connectionString = connectString;
+    }
+
+    /**
+     * If set to true then it will allow the connection to be used as part of a Secure Gateway for
+     * enterprise > version 1.1.2 and desktop > 1.1.4.
+     * 
+     * @param batchTimeout
+     *            Timeout value
+     * @param unit
+     *            Unit of the timeout value
+     */
+    @Parameter(name="frontEndConnectionFlag", optional=true,
+            description="Set to true to connect through a Secure Gateway for Event Store Enterprise Edition version >= 1.1.2 and Developer Edition version > 1.1.4")
+    public synchronized void setUseFrontendConnectionEndpoints(boolean frontEndConnectionFlag ) {
+        this.frontEndConnectionFlag = frontEndConnectionFlag;
     }
 
     /**

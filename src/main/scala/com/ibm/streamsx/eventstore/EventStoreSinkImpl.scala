@@ -30,6 +30,7 @@ object EventStoreSinkImpl {
   // refactor to split up the zk stuff and EventStore stuff for 6-lining
   def mkWriter(databaseName : String, tableName: String, 
 		connectionString: String,
+                frontEndConnectionFlag : Boolean,
 		streamSchema: StreamSchema, nullMapString: String,
                 eventStoreUser: String, eventStorePassword: String,
                 partitioningKey: String, primaryKey: String): EventStoreSinkImpl = {
@@ -46,7 +47,7 @@ object EventStoreSinkImpl {
       log.info( "CONNECTION info ****** databaseName= " + databaseName +
 	" tablename= " + tableName )
       new EventStoreSinkImpl(databaseName, tableName,
-		connectionString, streamSchema, nullMapString, 
+		connectionString, frontEndConnectionFlag, streamSchema, nullMapString, 
                 eventStoreUser, eventStorePassword,
                 partitioningKey, primaryKey)
     } catch { case e: Exception => 
@@ -60,7 +61,9 @@ object EventStoreSinkImpl {
  * exists, and insert batches of rows using the Event Store client APIs from the EventContext class.
  */
 class EventStoreSinkImpl(databaseName : String, tableName: String,
-                         connectionString: String, streamSchema: StreamSchema,
+                         connectionString: String, 
+                         frontEndConnectionFlag: Boolean, 
+                         streamSchema: StreamSchema,
                          nullMapString: String, eventStoreUser: String, eventStorePassword: String,
                          partitioningKey: String, primaryKey: String) {
   protected val log = Logger.getLogger("EventStoreSinkImpl")//EventStoreSink.class.getName());
@@ -132,6 +135,16 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
         // Determine if we need to setup the zookeeper connection string using an API
         if( connectionString != null ){
             ConfigurationReader.setConnectionEndpoints(connectionString)
+        }
+
+        if( frontEndConnectionFlag ){
+            try {
+              ConfigurationReader.setUseFrontendConnectionEndpoints(frontEndConnectionFlag)
+            } catch {
+               case e: Exception => {
+                  log.error( "Could not set ConfigurationReader.setUseFrontendConnectionEndpoints likely due to incorrect Event Store version" )
+               }
+            }
         }
 
         // Determine if we need to setup EventStore user string using an API
