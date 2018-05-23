@@ -50,6 +50,7 @@ libraryDependencies ++= Seq(
   "com.esotericsoftware.kryo" % "kryo" % "2.16",
   "org.apache.commons" % "commons-lang3" % "3.3.2",
   "org.json4s" % "json4s-ast_2.11" % "3.2.10",
+  "org.json4s" %% "json4s-jackson" % "3.2.11",
 
   "org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkver % "provided",
 
