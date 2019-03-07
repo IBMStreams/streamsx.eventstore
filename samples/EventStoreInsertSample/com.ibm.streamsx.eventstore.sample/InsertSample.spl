@@ -77,13 +77,14 @@ public composite InsertSampleComp (output SampleResult) {
 		expression<rstring> $tableName: "ReviewTable";
 		expression<rstring> $eventStoreUser : ""; // empty uses default
 		expression<rstring> $eventStorePassword : ""; // empty uses default
+		expression<int32>   $iterations: 300;
 
 	graph
 		
 		stream<int64 userId, int32 categoryId, rstring productName, boolean boolfield, boolean boolfield2, int32 duration, rstring review> Beacon = spl.utility::Beacon() {
 			param
 				period: 0.1;
-				iterations: 300;
+				iterations: $iterations;
 			output
 				Beacon:
 					categoryId=(int32)IterationCount(),

@@ -55,6 +55,7 @@ import com.ibm.streams.operator.model.OutputPortSet;
 import com.ibm.streams.operator.model.OutputPorts;
 import com.ibm.streams.operator.model.Parameter;
 import com.ibm.streams.operator.model.PrimitiveOperator;
+import com.ibm.streams.operator.model.CustomMetric;
 import com.ibm.streams.operator.metrics.*;
 import com.ibm.streams.operator.state.Checkpoint;
 import com.ibm.streams.operator.state.ConsistentRegionContext;
@@ -143,6 +144,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     Metric successes = null;
     Metric insertGaugeTime = null;
     Metric numBatchesPerInsert = null;
+    Metric nActiveInserts = null;
 
     /* end_generated_IBM_copyright_code */
 
@@ -170,6 +172,12 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private Object drainLock = new Object();
     public static final long CONSISTENT_REGION_DRAIN_WAIT_TIME = 180000;
 
+	// Initialize the metrics
+    @CustomMetric (kind = Metric.Kind.COUNTER, name = "nActiveInserts", description = "Number of active insert requests")
+    public void setnActiveInserts (Metric nActiveInserts) {
+        this.nActiveInserts = nActiveInserts;
+    }    
+    
     /* InsertRunnable is the process that obtains a batch from a queue and processes it by sending to IBM Db2 Event Store.
      * It should be noted that this will execute asynchronously with the process that receives rows from the input.
      */
@@ -315,7 +323,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         failures = null;
         successes = null;
         insertGaugeTime = null;
-	numBatchesPerInsert = null;
+        numBatchesPerInsert = null;
 
         // Get the consistent region context
         crContext = context.getOptionalContext(ConsistentRegionContext.class);
@@ -520,14 +528,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         // doesn't support output ports.
         
         // If a final marker comes in then need to flush out any remaining tuples.
-        if (mark != Punctuation.FINAL_MARKER)
-            return;
-        switch (mark) {
-        case WINDOW_MARKER:
-            break;
-        case FINAL_MARKER:
-            flushTuples(); 
-            break;
+        if (mark == Punctuation.FINAL_MARKER) {
+            flushTuples();
         }
     }
     
@@ -535,7 +537,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      * Process all batched tuples from this port.
      */
     private synchronized void flushTuples() throws Exception {
-
+    	log.info("flushTuples >>");
         LinkedList</*Row*/Tuple> asyncBatch = null;
 
         if( batch != null && !batch.isEmpty() ){
@@ -543,12 +545,19 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             batch = newBatch();
             batchQueue.put(asyncBatch);
         }
-
+        
         if( batchQueue != null && batchQueue.peek() != null ) {
             while (batchQueue != null && batchQueue.peek() != null) {
                 Thread.sleep(1000);
             }
         }
+        if (hasResultsPort) {
+	        Thread.sleep(1000);
+			while (getActiveInsertsMetric().getValue() >= 1) {
+				Thread.sleep(100);
+			}
+        }
+        log.info("flushTuples <<");
     }
     
     /**
@@ -949,6 +958,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
       if(impl != null){
           if( numBatchesPerInsert != null) numBatchesPerInsert.setValue((long)1);//numInQueue +1);
+          getActiveInsertsMetric().increment();
           long startTime = 0;
           long endTime = 0;
           try{
@@ -961,7 +971,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
               log.info("*** SUCCESSFUL INSERT");
               if(successes != null) successes.increment();
               if(insertGaugeTime != null) insertGaugeTime.setValue(endTime);
-              submitResultTuple(batch, true);           
+              submitResultTuple(batch, true);
+              getActiveInsertsMetric().incrementValue(-1);
               batch.clear();
           } catch(Exception e) {
               endTime = System.currentTimeMillis() - startTime;
@@ -969,6 +980,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
               if(failures != null) failures.increment();
               log.error("Failed to write tuple to EventStore.\n"+ stringifyStackTrace(e) );
               submitResultTuple(batch, false);
+              getActiveInsertsMetric().incrementValue(-1);
               if(crContext != null) {
             	  // In a consitent region just throw the error so we can restart gracefully
                   log.error("Failed to write tuple to EventStore so now THROW exception in processBatch");
@@ -1010,5 +1022,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     public synchronized TimeUnit getBatchTimeoutUnit() {
         return batchTimeoutUnit;
     }
+    
+	public Metric getActiveInsertsMetric() {
+		return nActiveInserts;
+	}    
 }
 

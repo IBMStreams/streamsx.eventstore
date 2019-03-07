@@ -56,13 +56,23 @@ class TestDistributed(unittest.TestCase):
 
         cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
 
-        tester.test(self.test_ctxtype, cfg)
+        tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
         print (str(tester.result))
 
 
-    def test_insert_sample(self):
+    def test_insert_sample_flush_remaining_tuples(self):
         # test the sample application
-        self._build_launch_validate("test_insert_sample", "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection}, '../../samples/EventStoreInsertSample', 100, False)
+        # final marker should flush the remaining tuples
+        num_expected = 305
+        batch_size = 50
+        self._build_launch_validate("test_insert_sample_flush_remaining_tuples", "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
+
+    def test_insert_sample_batch_complete(self):
+        # test the sample application
+        # final marker received after last async batch is triggered
+        num_expected = 300
+        batch_size = 50
+        self._build_launch_validate("test_insert_sample_batch_complete", "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
 
 
 class TestICP(TestDistributed):
