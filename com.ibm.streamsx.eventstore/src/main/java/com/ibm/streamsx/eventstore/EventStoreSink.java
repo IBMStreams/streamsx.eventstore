@@ -807,7 +807,11 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     @Parameter(name="eventStoreUser", optional=true,
 		description = "Name of the IBM Db2 Event Store User in order to connect")
-    public void setEventStoreUser(String s) {eventStoreUser = s;}
+    public void setEventStoreUser(String s) {
+    	if (!("".equals(s))) {
+    		eventStoreUser = s;
+    	}
+    }
 
     /**
      * Set the password information which will be null or a string
@@ -817,7 +821,11 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     @Parameter(name="eventStorePassword", optional=true,
 		description = "Password for the IBM Db2 Event Store User in order to connect")
-    public void setEventStorePassword(String s) {eventStorePassword = s;}
+    public void setEventStorePassword(String s) {
+    	if (!("".equals(s))) {
+    		eventStorePassword = s;
+    	}
+    }
 
     /**
      * Set the shard/partitioning key where if its not in the input or empty
