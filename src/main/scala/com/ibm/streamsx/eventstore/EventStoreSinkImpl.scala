@@ -139,7 +139,8 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
 
         if( frontEndConnectionFlag ){
             try {
-              ConfigurationReader.setUseFrontendConnectionEndpoints(frontEndConnectionFlag)
+              // comment for Developer Edition 1.1.4
+              //ConfigurationReader.setUseFrontendConnectionEndpoints(frontEndConnectionFlag)
             } catch {
                case e: Exception => {
                   log.error( "Could not set ConfigurationReader.setUseFrontendConnectionEndpoints likely due to incorrect Event Store version" )

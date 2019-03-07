@@ -192,7 +192,7 @@ To enable the EventStoreSink operator to connect to your remote IBM Db2 Event St
 
 Enter this value for the connectionString parameter. For example: `9.26.150.75:1101,9.26.150.76:1101`
 
-**Tip:** To connect to IBM Db2 Event Store Developer Edition, use the external IP address for the work station where IBM Db2 Event Store is running. Use the same port number that is specified in the sample notebooks that are available in the **Community** section of the IBM Db2 Event Store end user client.  
+**Tip:** To connect to IBM Db2 Event Store Developer Edition, use the external IP address for the work station where IBM Db2 Event Store is running. Use the same port number that is specified in the sample notebooks that are available in the **Community** section of the IBM Db2 Event Store end user client.
 
 If you are running IBM Db2 Event Store Developer Edition on a Mac, you can find the external IP address in **System Preferences > Network**.
 
@@ -228,8 +228,8 @@ You can define the following parameters for the Event Store:
 
 An optional output port exists in the EventStoreSink operator. This output port is intended to output the information on whether a tuple was successful or not when it was inserted into the database. EventStoreSink looks for a Boolean field called "_Inserted_" in the output stream. EventStoreSink sets the field to `true` if the data was successfully inserted and `false` if the insert failed. 
 
-Besides the "_Inserted_" column, the output will include the original tuple that was processed by the EventStoreSink operator. 
+Besides the `_Inserted_` column, the output will include the original tuple that was processed by the EventStoreSink operator. 
 
-The output stream can be used to tie in with an SQS operator to enable it to use the "_Inserted_" flag to remove successfully inserted tuples from the SQS query. If the tuple is not inserted, the tuple must remain in the SQS query so that it can be resubmitted for insertion again. 
+The output stream can be used to tie in with an SQS operator to enable it to use the `_Inserted_` flag to remove successfully inserted tuples from the SQS query. If the tuple is not inserted, the tuple must remain in the SQS query so that it can be resubmitted for insertion again. 
 
 To add the output port for the sink operator, add the output port explicitly in the operator properties and define the schema for the output stream. 
