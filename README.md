@@ -106,8 +106,6 @@ In the preceding table "only one level supported" means the array or map has ele
 
 1. Clone the git repository to your VM where IBM Streams is installed.
 
-1. In the home directory of the cloned directory, create a directory called `impl/lib` where you will store the generated JAR file for the sink operator.
-
 1. In the home directory, compile the sink operator to make the JAR files, the project, and the target directories, and the toolkit.xml file by running one of the following commands:
 
    - `sbt toolkit`
@@ -162,7 +160,6 @@ In these instructions, your virtual machine is the Streams QSE VM. These instruc
     For more information on installing IBM Db2 Event Store, see <https://www.ibm.com/support/knowledgecenter/SSGNPV/eventstore/welcome.html>.
 1. In the top level of the repository, run `sbt toolkit` or `./recompile.sh`. 
 
-   **Tip:** You might need to create `impl/lib/` in the repository for it to run properly.
 1. Create a new IBM Streams project. Add the location of the repository as a toolkit location.
 1. Start IBM Db2 Event Store on the remote machine (Depending on the version of IBM Db2 Event Store that you have installed, this could be your local host or your cluster.)
 1. Write an IBM Streams test project with EventStoreSink as the sink operator.
