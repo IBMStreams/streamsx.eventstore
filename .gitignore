@@ -1,0 +1,8 @@
+/.project
+/toolkit.xml
+/target/
+/project/project/
+/project/target/
+/project/build.properties
+/doc/
+/com.ibm.streamsx.eventstore/EventStoreSink/EventStoreSink.xml

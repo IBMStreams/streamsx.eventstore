@@ -196,42 +196,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                                 log.info("In submitBatch call after processbatch with addLeftovers = " + addLeftovers + 
 					" with thread " + threadId);
 
-                                // If we were not able to carry out the insertions
-                                /// then send the error result through the output port
-                                // but if the batch was inserted properly then send
-                                // successful message to the output port
-                                if (!asyncBatch.isEmpty()) {
-                                    if (addLeftovers) {
-                                        log.error("*** signal batch of rows failed and asynchBatch not empty");
-                                    } else {
-                                        log.info("*** signal batch of rows suceeeded");
-                                    }
-                                    if (hasResultsPort) {
-                                        // Now send all tuples with result to the output port
-                                        for (Iterator</*Row*/Tuple> it = asyncBatch.iterator();
-                                             it.hasNext(); ) {
-                                            /*Row r*/Tuple tuple = it.next(); 
-
-                                            // Create a new tuple for output port 0
-                                            OutputTuple outTuple = resultsOutputPort.newTuple();
-
-                                            // Copy incoming attributes to output tuple if they're
-                                            //in the output schema
-                                            outTuple.assign(tuple);
-
-                                            try {
-                                                // Get attribute from input tuple and manipulate
-                                                // where a true value means the row was inserted 
-                                                outTuple.setBoolean("_Inserted_", !addLeftovers);
-                                            } catch (Exception e) {
-                                                log.error("Failed to add inserted field to output");
-                                            }
-
-                                            // Submit new tuple to output port 0
-                                            resultsOutputPort.submit(outTuple);
-                                        }
-                                    }
-                                }
                             } catch (Exception e) {
 				log.error("Found exception in InsertRunnable thread " + threadId + " messagee:" + e.getMessage() );
 				throw new RuntimeException(e);
@@ -681,43 +645,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
                                 log.info("In submitBatch call after processbatch with addLeftovers = " + addLeftovers);
 
-                                // If we were not able to carry out the insertions and the output port exists
-                                // then send the error result through the output port with the tuple
-                                // but if the batch was inserted properly then send
-                                // successful message to the output port.
-				// If no output port and a failure exists we will throw an exception
-  				// if in a consistent region
-                                if (!asyncBatch.isEmpty()) {
-                                    if (addLeftovers) {
-                                        log.error("*** signal batch of rows failed and asynchBatch not empty");
-                                    } else {
-                                        log.info("*** signal batch of rows suceeeded");
-                                    }
-                                    if (hasResultsPort) {
-                                        // Now send all tuples with result to the output port
-                                        for (Iterator</*Row*/Tuple> it = asyncBatch.iterator();
-                                             it.hasNext(); ) {
-                                            /*Row r*/Tuple tuple = it.next(); 
-
-                                            // Create a new tuple for output port 0
-                                            OutputTuple outTuple = resultsOutputPort.newTuple();
-
-                                            // Copy incoming attributes to output tuple if they're
-                                            //in the output schema
-                                            outTuple.assign(tuple);
-
-                                            try {
-                                                // Get attribute from input tuple and manipulate
-                                                outTuple.setBoolean("_Inserted_", !addLeftovers);
-                                            } catch (Exception e) {
-                                                log.error("Failed to add inserted field to output");
-                                            }
-
-                                            // Submit new tuple to output port 0
-                                            resultsOutputPort.submit(outTuple);
-                                        }
-                                    }
-                                }
                         }
                         return null;
                     }
@@ -950,6 +877,39 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         this.batchTimeoutUnit = unit;
     }
 
+    private void submitResultTuple(LinkedList</*Row*/Tuple> batch, boolean inserted) throws Exception {
+        // If we were not able to carry out the insertions
+        /// then send the error result through the output port
+        // but if the batch was inserted properly then send
+        // successful message to the output port
+    	
+    	if (hasResultsPort) {
+    		// Now send all tuples with result to the output port
+    		for (Iterator</*Row*/Tuple> it = batch.iterator();
+    				it.hasNext(); ) {
+    			/*Row r*/Tuple tuple = it.next(); 
+
+            	// Create a new tuple for output port 0
+            	OutputTuple outTuple = resultsOutputPort.newTuple();
+
+            	// Copy incoming attributes to output tuple if they're
+            	//in the output schema
+            	outTuple.assign(tuple);
+
+            	try {
+            		// Get attribute from input tuple and manipulate
+            		// where a true value means the row was inserted 
+            		outTuple.setBoolean("_Inserted_", inserted);
+            	} catch (Exception e) {
+            		log.error("Failed to add inserted field to output");
+            	}
+
+            	// Submit new tuple to output port 0
+            	resultsOutputPort.submit(outTuple);
+    		}
+    	}  
+    }
+    
     /**
      * Process a batch of tuples.
      * 
@@ -993,14 +953,16 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
               log.info("*** SUCCESSFUL INSERT");
               if(successes != null) successes.increment();
               if(insertGaugeTime != null) insertGaugeTime.setValue(endTime);
+              submitResultTuple(batch, true);           
               batch.clear();
           } catch(Exception e) {
               endTime = System.currentTimeMillis() - startTime;
               log.error( "Insert (failure time) = " + endTime );
               if(failures != null) failures.increment();
               log.error("Failed to write tuple to EventStore.\n"+ stringifyStackTrace(e) );
+              submitResultTuple(batch, false);
               if(crContext != null) {
-		  // In a consitent region just throw the error so we can restart gracefully
+            	  // In a consitent region just throw the error so we can restart gracefully
                   log.error("Failed to write tuple to EventStore so now THROW exception in processBatch");
                   throw e;
               } else {
