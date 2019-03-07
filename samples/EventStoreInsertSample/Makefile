@@ -15,19 +15,19 @@ else
   ifeq ($(STREAMS_INSTALL),)
     $(error error: environment variable STREAMS_INSTALL has to be set)
   endif
-  # Set the STREAMS_EVENTSTORE_TOOLKIT variable if streamsx.eventstore sample or toolkit location changed in your environment.
-  ifeq ($(STREAMS_EVENTSTORE_TOOLKIT),)
+  # Set the STREAMSX_EVENTSTORE_TOOLKIT variable if streamsx.eventstore sample or toolkit location changed in your environment.
+  ifeq ($(STREAMSX_EVENTSTORE_TOOLKIT),)
     ifneq ($(realpath ../../com.ibm.streamsx.eventstore/toolkit.xml),)
-      STREAMS_EVENTSTORE_TOOLKIT = ../../com.ibm.streamsx.eventstore
+      STREAMSX_EVENTSTORE_TOOLKIT = ../../com.ibm.streamsx.eventstore
     endif
-    ifeq ($(STREAMS_EVENTSTORE_TOOLKIT),)
+    ifeq ($(STREAMSX_EVENTSTORE_TOOLKIT),)
       ifneq ($(realpath $(STREAMS_INSTALL)/toolkits/com.ibm.streamsx.eventstore),)
-        STREAMS_EVENTSTORE_TOOLKIT = $(STREAMS_INSTALL)/toolkits/com.ibm.streamsx.eventstore
+        STREAMSX_EVENTSTORE_TOOLKIT = $(STREAMS_INSTALL)/toolkits/com.ibm.streamsx.eventstore
       endif
     endif
   endif
   SPLC = $(STREAMS_INSTALL)/bin/sc
-  SPL_PATH = $(STREAMS_EVENTSTORE_TOOLKIT)
+  SPL_PATH = $(STREAMSX_EVENTSTORE_TOOLKIT)
 endif
 
 SPLC_FLAGS += -t $(SPL_PATH) --rebuild-toolkits
