@@ -60,6 +60,7 @@ import com.ibm.streams.operator.metrics.*;
 import com.ibm.streams.operator.state.Checkpoint;
 import com.ibm.streams.operator.state.ConsistentRegionContext;
 import com.ibm.streams.operator.state.StateHandler;
+import com.ibm.streams.operator.log4j.TraceLevel;
 
 import com.ibm.streamsx.eventstore.EventStoreSinkImpl;
 //import com.ibm.streamsx.eventstore.EventStoreSinkJImplObject;
@@ -106,12 +107,11 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     /* begin_generated_IBM_copyright_code */
     public static final String IBM_COPYRIGHT = 
 	"/*******************************************************************************" +
-	"* Copyright (C) 2017, International Business Machines Corporation" +
+	"* Copyright (C) 2017,2019, International Business Machines Corporation" +
 	"* All Rights Reserved" +
 	"*******************************************************************************/";
 
-    Logger log = Logger.getLogger(this.getClass());
-
+    private static Logger tracer = Logger.getLogger(EventStoreSink.class.getName());
 
     EventStoreSinkImpl/* EventStoreSinkJImpl*/ impl = null;
 
@@ -192,21 +192,18 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                                 if( asyncBatch == null ){
                                     continue;
                                 }
-
-                                log.info("Found a non-empty batch so call insert from submitbatch: thread " + threadId);
-                                //log.info("Before processBatch KB: " + (double) (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024);
-
+                                if (tracer.isDebugEnabled()) {
+                                	tracer.log(TraceLevel.DEBUG, "Found a non-empty batch so call insert from submitbatch: thread " + threadId);
+                                }
                                 // Process the batch with sending it to IBM Db2 Event Store
                                 boolean addLeftovers = processBatch(asyncBatch);
 
-                                //log.info("After processBatch KB: " + (double) (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024);
-
-                                log.info("In submitBatch call after processbatch with addLeftovers = " + addLeftovers + 
-					" with thread " + threadId);
-
+                                if (tracer.isDebugEnabled()) {
+                                	tracer.log(TraceLevel.DEBUG, "In submitBatch call after processbatch with addLeftovers = " + addLeftovers + " with thread " + threadId);
+                                }
                             } catch (Exception e) {
-				log.error("Found exception in InsertRunnable thread " + threadId + " messagee:" + e.getMessage() );
-				throw new RuntimeException(e);
+                                tracer.log(TraceLevel.ERROR, "Found exception in InsertRunnable thread " + threadId + " message:" + e.getMessage() );
+                                throw new RuntimeException(e);
 	    		    } finally {
                 		if(crContext != null) {
 		   		    // if internal buffer has been cleared, notify waiting thread.
@@ -237,24 +234,32 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     @Override
     public void close() throws IOException {
-        log.info( "CLOSE the IBM Db2 Event Store sink operator"  );
+        if (tracer.isDebugEnabled()) {
+        	tracer.log(TraceLevel.DEBUG, "CLOSE the IBM Db2 Event Store sink operator");
+        }
     }
 
     @Override
     public void checkpoint(Checkpoint checkpoint) throws Exception {
-        log.info( "CHECKPOINT the IBM Db2 Event Store sink operator Checkpoint sequence ID = " + checkpoint.getSequenceId()  );
+        if (tracer.isDebugEnabled()) {
+        	tracer.log(TraceLevel.DEBUG, "CHECKPOINT the IBM Db2 Event Store sink operator Checkpoint sequence ID = " + checkpoint.getSequenceId() );
+        }
 
         // Write out a checkpoint state and not the order of writes must be adhere to in reset for order of reads
         checkpoint.getOutputStream().writeLong(failures.getValue());
         checkpoint.getOutputStream().writeLong(successes.getValue());
         //checkpoint.getOutputStream().writeLong(insertGaugeTime.getValue()); does not need to be save as its a single value in time
         //checkpoint.getOutputStream().writeLong(numBatchesPerInsert.getValue()); does not need to be save as its a single value in time
-        log.info( "CHECKPOINT completed with failcount = " + failures.getValue() + " success count = " + successes.getValue());
+        if (tracer.isDebugEnabled()) {
+        	tracer.log(TraceLevel.DEBUG, "CHECKPOINT completed with failcount = " + failures.getValue() + " success count = " + successes.getValue());
+        }
     }
 
     @Override
     public void drain() throws Exception {
-        log.info( "DRAIN called for the IBM Db2 Event Store sink operator" );
+        if (tracer.isDebugEnabled()) {
+        	tracer.log(TraceLevel.DEBUG, "DRAIN called for the IBM Db2 Event Store sink operator");
+        }
 
         synchronized(this) {
             if( batch != null && !batch.isEmpty() ){
@@ -265,43 +270,57 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             }
         }
 
-	if(batchQueue.peek() != null) {
- 	    synchronized(drainLock) {
-		if(batchQueue.peek() != null) {
-		    drainLock.wait(CONSISTENT_REGION_DRAIN_WAIT_TIME);
-		    if(batchQueue.peek() != null) {
-			throw new Exception("TIMED_OUT_WAITING_FOR_TUPLES_DRAINING");
-		    }
+        if(batchQueue.peek() != null) {
+        	synchronized(drainLock) {
+        		if(batchQueue.peek() != null) {
+        			drainLock.wait(CONSISTENT_REGION_DRAIN_WAIT_TIME);
+        			if(batchQueue.peek() != null) {
+        				throw new Exception("TIMED_OUT_WAITING_FOR_TUPLES_DRAINING");
+        			}
+        		}
+        	}
 		}
-	    }
-	}
-        log.info( "DRAIN completed" );
+    	if (tracer.isDebugEnabled()) {
+    		tracer.log(TraceLevel.DEBUG, "DRAIN completed");
+    	}
     }
 
     @Override
     public void reset(Checkpoint checkpoint) throws Exception {
-        log.info( "RESET called for the IBM Db2 Event Store sink operator" + checkpoint.getSequenceId() );
+    	if (tracer.isDebugEnabled()) {
+    		tracer.log(TraceLevel.DEBUG, "RESET called for the IBM Db2 Event Store sink operator" + checkpoint.getSequenceId());
+    	}
 
         long failCount = checkpoint.getInputStream().readLong();
         long sucessCount = checkpoint.getInputStream().readLong();
-        log.info( "RESET failcount = " + failCount + " success count = " + sucessCount);
+    	if (tracer.isDebugEnabled()) {
+    		tracer.log(TraceLevel.DEBUG, "RESET failcount = " + failCount + " success count = " + sucessCount);
+    	}
         impl = null; // unset the connection information to Event Store
         startOperatorSetup(getOperatorContext(), failCount, sucessCount);
-        log.info( "RESET completed" );
+        if (tracer.isDebugEnabled()) {
+    		tracer.log(TraceLevel.DEBUG, "RESET completed");
+    	}
     }
 
     @Override
     public void resetToInitialState() throws Exception {
-        log.info( "RESETToINITIALSTATE called for the IBM Db2 Event Store sink operator" );
+        if (tracer.isDebugEnabled()) {
+    		tracer.log(TraceLevel.DEBUG, "RESETToINITIALSTATE called for the IBM Db2 Event Store sink operator");
+    	}
         // Initialize the operator information from scratch
         impl = null; // unset the connection information to Event Store
         startOperatorSetup(getOperatorContext(), 0L, 0L);
-        log.info( "RESETToINITIALSTATE completed" );
+        if (tracer.isDebugEnabled()) {
+    		tracer.log(TraceLevel.DEBUG, "RESETToINITIALSTATE completed");
+    	}
     }
 
     @Override
     public void retireCheckpoint(long id) throws Exception {
-        log.info( "RETIRECHECKPOINT called for the IBM Db2 Event Store sink operator id= " + id );
+        if (tracer.isDebugEnabled()) {
+    		tracer.log(TraceLevel.DEBUG, "RETIRECHECKPOINT called for the IBM Db2 Event Store sink operator id= " + id );
+    	}
     }
 
     private boolean inConsistentRegion() {
@@ -317,8 +336,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     private synchronized void startOperatorSetup(OperatorContext context, Long failCount, Long successCount)
             throws Exception {
-        log.trace("Operator " + context.getName() + " initializing in PE: " + context.getPE().getPEId() + " in Job: " + context.getPE().getJobId() );
-
+    	if (tracer.isInfoEnabled()) {
+    		tracer.log(TraceLevel.INFO, "Operator " + context.getName() + " initializing in PE: " + context.getPE().getPEId() + " in Job: " + context.getPE().getJobId() );
+    	}
         opMetrics = null;
         failures = null;
         successes = null;
@@ -339,7 +359,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             failures = opMetrics.createCustomMetric("nWriteFailures",
                     "Number of tuples that failed to get written to IBM Db2 Event Store", Metric.Kind.COUNTER);
         } catch(Exception e) {
-            log.error("nWriteFailures metric exists.\n" + stringifyStackTrace(e));
+            tracer.log(TraceLevel.ERROR, "nWriteFailures metric exists.\n" + stringifyStackTrace(e));
             failures = opMetrics.getCustomMetric("nWriteFailures");
         }
 
@@ -347,7 +367,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             successes = opMetrics.createCustomMetric("nWriteSuccesses",
                     "Number of tuples that were written to IBM Db2 Event Store successfully", Metric.Kind.COUNTER);
         } catch(Exception e) {
-            log.error("nWriteSuccesses metric exists.\n" + stringifyStackTrace(e));
+            tracer.log(TraceLevel.ERROR, "nWriteSuccesses metric exists.\n" + stringifyStackTrace(e));
             successes = opMetrics.getCustomMetric("nWriteSuccesses");
         }
 
@@ -355,7 +375,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             insertGaugeTime = opMetrics.createCustomMetric("PerInsertTime",
                     "Time it takes to perform a successful batch insert", Metric.Kind.GAUGE);
         } catch(Exception e) {
-            log.error("PerInsertTime metric exists.\n" + stringifyStackTrace(e));
+            tracer.log(TraceLevel.ERROR, "PerInsertTime metric exists.\n" + stringifyStackTrace(e));
             insertGaugeTime = opMetrics.getCustomMetric("PerInsertTime");
         }
 
@@ -363,7 +383,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             numBatchesPerInsert = opMetrics.createCustomMetric("NumBatchesPerInsert",
                     "Number of batches inserted together", Metric.Kind.GAUGE);
         } catch(Exception e) {
-            log.error("NumBatchesPerInsert metric exists.\n" + stringifyStackTrace(e));
+            tracer.log(TraceLevel.ERROR, "NumBatchesPerInsert metric exists.\n" + stringifyStackTrace(e));
             numBatchesPerInsert = opMetrics.getCustomMetric("NumBatchesPerInsert");
         }
 
@@ -384,28 +404,33 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         //Obtain the configuration inforamtion using the configuration name
         if( cfgObjectName != null && cfgObjectName != "" ){
             cfgMap = context.getPE().getApplicationConfiguration(cfgObjectName);
-
-            log.info("Found config object");
-
+            if (tracer.isInfoEnabled()) {
+            	tracer.log(TraceLevel.INFO, "Found application configuration object");
+            }
             if( cfgMap.size() > 0 ){
                 // Override input parameters
                 // Check if we have a eventStoreUser
                 if( cfgMap.containsKey("eventStoreUser") ){
                     eventStoreUser = cfgMap.get("eventStoreUser");
-                    log.info("Config override eventStoreUser = " + eventStoreUser );
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override eventStoreUser = " + eventStoreUser);
+                    }
                 }
 
                 if( cfgMap.containsKey("eventStorePassword") ){
                     eventStorePassword = cfgMap.get("eventStorePassword");
-                    log.info("Config override eventStorePassword = *****" );//+ eventStorePassword );
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override eventStorePassword = *****");
+                    }
                 }
 
             }
         }
-        log.info("Resulting eventStoreUser = " + eventStoreUser +
+        if (tracer.isInfoEnabled()) {
+        	tracer.log(TraceLevel.INFO, "Resulting eventStoreUser = " + eventStoreUser +
                 " and passwd = *****"); // + eventStorePassword);
-
-        log.info("The max number of active batches is " + maxNumActiveBatches);
+        	tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
+        }
 
         // Set up connection to the IBM Db2 Event Store engine
         try {
@@ -415,15 +440,17 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             if (impl == null) {
                 if( databaseName == null || databaseName == "" ||
                         tableName == null || tableName == "" ){
-                    log.error( "No database or table name was given so we cannot carry out the insert");
+                	tracer.log(TraceLevel.ERROR, "No database or table name was given so we cannot carry out the insert");
                     impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName,
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
                             partitioningKey, primaryKey);
                 }
                 else{
-                    log.info( "databaseName= " + databaseName +
+                	if (tracer.isInfoEnabled()) {
+                		tracer.log(TraceLevel.INFO, "databaseName= " + databaseName +
                             " tabename= " + tableName );
+                	}
                     impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName,
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
@@ -433,12 +460,14 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             // If the batch size if not provided calculate the default batchSize
             if( !batchSizeParmSet ){
                 batchSize = impl.calcDefaultBatchSize();
-                log.info( "Set default batch size: " + batchSize );
+                if (tracer.isInfoEnabled()) {
+                	tracer.log(TraceLevel.INFO, "Set default batch size: " + batchSize );
+                }
             }
 
             batch = newBatch();
         } catch(Exception e) {
-            log.error( "Failed to connect to IBM Db2 Event Store.\n"+ stringifyStackTrace(e) );
+        	tracer.log(TraceLevel.ERROR, "Failed to connect to IBM Db2 Event Store.\n"+ stringifyStackTrace(e) );
             throw e;
         }
     }
@@ -537,7 +566,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      * Process all batched tuples from this port.
      */
     private synchronized void flushTuples() throws Exception {
-    	log.info("flushTuples >>");
+    	if (tracer.isInfoEnabled()) { // use info level since it is called at final marker only
+    		tracer.log(TraceLevel.INFO, "flushTuples >>");
+    	}	
         LinkedList</*Row*/Tuple> asyncBatch = null;
 
         if( batch != null && !batch.isEmpty() ){
@@ -557,7 +588,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 				Thread.sleep(100);
 			}
         }
-        log.info("flushTuples <<");
+    	if (tracer.isInfoEnabled()) {
+    		tracer.log(TraceLevel.INFO, "flushTuples <<");
+    	}
     }
     
     /**
@@ -626,12 +659,12 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         // another submit batch so if nothing to do, just complete.
         synchronized (this) {
             //boolean allComplete = batchesComplete();
-
-            log.info("The number of activebatches in submitbatch = " + activeBatches.size());
-
+        	if (tracer.isInfoEnabled()) {
+        		tracer.log(TraceLevel.INFO, "The number of activebatches in submitbatch = " + activeBatches.size());
+        	}
             // Limit the number of outstanding tasks.
             if (/*!submitter && !allComplete &&*/ activeBatches.size() >= 1){ //maxNumActiveBatches) {
-                log.error("Inside submitBatch too many batch processes");
+                tracer.log(TraceLevel.ERROR, "Inside submitBatch too many batch processes");
                 return;
             }
         }
@@ -645,14 +678,14 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                                     continue;
                                 }
 
-                                log.info("Found a non-empty batch so call insert from submitbatch");
-                                //log.info("Before processBatch KB: " + (double) (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024);
-
+                                if (tracer.isDebugEnabled()) {
+                                	tracer.log(TraceLevel.DEBUG, "Found a non-empty batch so call insert from submitbatch");
+                                }
                                 boolean addLeftovers = processBatch(asyncBatch);
 
-                                //log.info("After processBatch KB: " + (double) (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024);
-
-                                log.info("In submitBatch call after processbatch with addLeftovers = " + addLeftovers);
+                                if (tracer.isDebugEnabled()) {
+                                	tracer.log(TraceLevel.DEBUG, "In submitBatch call after processbatch with addLeftovers = " + addLeftovers);
+                                }
 
                         }
                         return null;
@@ -667,8 +700,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     @Override
     public synchronized void shutdown() throws Exception {
         OperatorContext context = getOperatorContext();
-        log.trace("Operator " + context.getName() + " shutting down in PE: " + context.getPE().getPEId() + " in Job: " + context.getPE().getJobId() );
-
+        if (tracer.isInfoEnabled()) {
+    		tracer.log(TraceLevel.INFO, "Operator " + context.getName() + " shutting down in PE: " + context.getPE().getPEId() + " in Job: " + context.getPE().getJobId() );
+    	}
         shutdown = true;
 
         if( batchQueue != null ){
@@ -748,7 +782,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         batchSizeParmSet = true;
 
         if( batchSize > maxBatchSize ){
-            log.error("You exceeded the maximum batchsize so resetting to max = " + maxBatchSize );
+            tracer.log(TraceLevel.ERROR, "You exceeded the maximum batchsize so resetting to max = " + maxBatchSize );
             this.batchSize = maxBatchSize;
         }
 
@@ -761,7 +795,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     batch = newBatch();
                     //submitBatch(false);
                 } catch(Exception e) {
-                    log.error("Could not add the current batch to the batchQueue");
+                    tracer.log(TraceLevel.ERROR, "Could not add the current batch to the batchQueue");
                 }
             }
         }
@@ -918,7 +952,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             		// where a true value means the row was inserted 
             		outTuple.setBoolean("_Inserted_", inserted);
             	} catch (Exception e) {
-            		log.error("Failed to add inserted field to output");
+            		tracer.log(TraceLevel.ERROR, "Failed to add inserted field to output");
             	}
 
             	// Submit new tuple to output port 0
@@ -949,7 +983,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
     protected /*abstract*/ boolean processBatch(LinkedList</*Row*/Tuple> batch)
             throws Exception {
-      log.info("Process a new BATCH ********** Number of tuples = " + batch.size());
+      if (tracer.isDebugEnabled()) {
+    		tracer.log(TraceLevel.DEBUG, "Process a new BATCH ********** Number of tuples = " + batch.size());
+      }
 
       if( batch.size() <= 0 )
           return false;
@@ -967,8 +1003,10 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
               impl.insertTuple(batch); 
 
               endTime = System.currentTimeMillis() - startTime;
-              log.info( "Insert (success time) = " + endTime );
-              log.info("*** SUCCESSFUL INSERT");
+              if (tracer.isDebugEnabled()) {
+          		tracer.log(TraceLevel.DEBUG, "Insert (success time) = " + endTime);
+          		tracer.log(TraceLevel.DEBUG, "*** SUCCESSFUL INSERT");
+              }
               if(successes != null) successes.increment();
               if(insertGaugeTime != null) insertGaugeTime.setValue(endTime);
               submitResultTuple(batch, true);
@@ -976,14 +1014,16 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
               batch.clear();
           } catch(Exception e) {
               endTime = System.currentTimeMillis() - startTime;
-              log.error( "Insert (failure time) = " + endTime );
+              if (tracer.isDebugEnabled()) {
+          		tracer.log(TraceLevel.DEBUG, "Insert (failure time) = " + endTime);
+              }
               if(failures != null) failures.increment();
-              log.error("Failed to write tuple to EventStore.\n"+ stringifyStackTrace(e) );
+              tracer.log(TraceLevel.ERROR, "Failed to write tuple to EventStore.\n"+ stringifyStackTrace(e) );
               submitResultTuple(batch, false);
               getActiveInsertsMetric().incrementValue(-1);
               if(crContext != null) {
             	  // In a consitent region just throw the error so we can restart gracefully
-                  log.error("Failed to write tuple to EventStore so now THROW exception in processBatch");
+                  tracer.log(TraceLevel.ERROR, "Failed to write tuple to EventStore so now THROW exception in processBatch");
                   throw e;
               } else {
                   return true;

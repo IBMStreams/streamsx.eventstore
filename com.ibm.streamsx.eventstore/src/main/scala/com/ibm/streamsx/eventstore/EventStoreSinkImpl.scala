@@ -76,7 +76,11 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
   import org.apache.log4j.{Level, LogManager}
   val logLevel = LogManager.getRootLogger().getLevel()
   log.info("Root logger level = " + logLevel)
-  LogManager.getLogger("com.ibm.event").setLevel(logLevel)
+  if ((logLevel == Level.DEBUG) || (logLevel == Level.TRACE) || (logLevel == Level.WARN))
+    LogManager.getLogger("com.ibm.event").setLevel(logLevel)
+  else
+    LogManager.getLogger("com.ibm.event").setLevel(Level.ERROR)
+  LogManager.getLogger("io.netty").setLevel(Level.OFF)
 
  try {
      connectToDatabase(true)
