@@ -29,7 +29,7 @@ ant clean
 
 Example for running a single test case:
 
-    python3 -u -m unittest test_eventstore.TestDistributed.test_insert_sample
+    python3 -u -m unittest test_eventstore.TestDistributed.test_insert_sample_batch_complete
 
 
 ### ICP Test
