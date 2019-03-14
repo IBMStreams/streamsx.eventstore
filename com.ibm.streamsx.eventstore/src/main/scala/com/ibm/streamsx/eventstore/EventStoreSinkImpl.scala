@@ -34,7 +34,7 @@ object EventStoreSinkImpl {
 		streamSchema: StreamSchema, nullMapString: String,
                 eventStoreUser: String, eventStorePassword: String,
                 partitioningKey: String, primaryKey: String): EventStoreSinkImpl = {
-    log.trace("Initializking the Event Store writer operator")
+    log.trace("Initializing the Event Store writer operator")
 
     if( databaseName == null || databaseName.isEmpty() ||
 		tableName == null || tableName.isEmpty() ){
@@ -44,7 +44,7 @@ object EventStoreSinkImpl {
     }
 
     try {
-      log.info( "CONNECTION info ****** databaseName= " + databaseName +
+      log.trace( "CONNECTION info ****** databaseName= " + databaseName +
 	" tablename= " + tableName )
       new EventStoreSinkImpl(databaseName, tableName,
 		connectionString, frontEndConnectionFlag, streamSchema, nullMapString, 
@@ -76,10 +76,12 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
   import org.apache.log4j.{Level, LogManager}
   val logLevel = LogManager.getRootLogger().getLevel()
   log.info("Root logger level = " + logLevel)
+  // suppress traces from com.ibm.event on INFO level
   if ((logLevel == Level.DEBUG) || (logLevel == Level.TRACE) || (logLevel == Level.WARN))
     LogManager.getLogger("com.ibm.event").setLevel(logLevel)
   else
     LogManager.getLogger("com.ibm.event").setLevel(Level.ERROR)
+  
   LogManager.getLogger("io.netty").setLevel(Level.OFF)
 
  try {
@@ -263,12 +265,12 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
       val newStruct = StructType(fields)
       log.info( "New schema for table " + tableName + " is : " + newStruct)
 
-      log.info("Conevert partitoning key = " + partitioningKey )
+      log.info("Convert partitoning key = " + partitioningKey )
       var partKey = createStringAttrArray( partitioningKey, streamSchema, Array[Int](0) )
       log.info( "Partitioning key column index array = " )
       for( i <- 0 until partKey.length ){ log.info(s"Col key index val = ${partKey(i)}" ) }
 
-      log.info("Conevert primary key = " + primaryKey)
+      log.info("Convert primary key = " + primaryKey)
       var primKey = createStringAttrArray( primaryKey, streamSchema, Array[Int]() )
       log.info( "Primary key column index array = " )
       for( i <- 0 until primKey.length ){ log.info(s"Col key index val = ${primKey(i)}" ) }
@@ -369,16 +371,18 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
   }
 
   def insertTuple(tuplebatch: java.util.LinkedList[/*Row*/Tuple]): Unit = {
-    log.trace("Inserting EventStore tuple...")
+    if (log.isTraceEnabled()) {
+      log.trace("Inserting EventStore tuple...")
+    }
     val rowBatch = /*tuplebatch.asScala.toIndexedSeq */mkRowIterator(tuplebatch.asScala.toList).toIndexedSeq
-  
-    log.info("Inserting a batch ...")
+    if (log.isTraceEnabled()) {
+      log.trace("Inserting a batch ...")
+    }
     val future: Future[InsertResult] = context.batchInsertAsync(tableToInsert, rowBatch)
-
-    log.info("... client continues while batches are being inserted ...")
-
-    // Wait, for the two batch inserts
-    log.info("waiting for batch inserts to complete...")
+    if (log.isTraceEnabled()) {
+      log.trace("... client continues while batches are being inserted ...")
+      log.trace("waiting for batch inserts to complete...")
+    }
     val result = Await.result(future, Duration.Inf)
     if (result.failed) {
       // In the future, we need to check the proper error code, and
@@ -399,7 +403,9 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
 		new Exception)
       }
     } else {
-      log.info(s"batch insert 1 complete: $result")
+      if (log.isTraceEnabled()) {
+        log.trace(s"batch insert 1 complete: $result")
+      }
     }
   }
 
@@ -584,12 +590,12 @@ object ConversionAPIObject {
       val newStruct = StructType(fields)
       log.info( "New schema for table " + tableName + " is : " + newStruct)
 
-      log.info("Conevert partitoning key = " + partitioningKey )
+      log.info("Convert partitoning key = " + partitioningKey )
       var partKey = createStringAttrArray( partitioningKey, streamSchema, Array[Int](0) )
       log.info( "Partitioning key column index array = " )
       for( i <- 0 until partKey.length ){ log.info(s"Col key index val = ${partKey(i)}" ) }
 
-      log.info("Conevert primary key = " + primaryKey)
+      log.info("Convert primary key = " + primaryKey)
       var primKey = createStringAttrArray( primaryKey, streamSchema, Array[Int]() )
       log.info( "Primary key column index array = " )
       for( i <- 0 until primKey.length ){ log.info(s"Col key index val = ${primKey(i)}" ) }
