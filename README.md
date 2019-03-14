@@ -106,9 +106,7 @@ In the preceding table "only one level supported" means the array or map has ele
 
 1. Clone the git repository to your VM where IBM Streams is installed.
 
-1. In the home directory of the cloned directory, create a directory called `impl/lib` where you will store the generated JAR file for the sink operator.
-
-1. In the home directory, compile the sink operator to make the JAR files, the project, and the target directories, and the toolkit.xml file by running one of the following commands:
+1. In the `com.ibm.streamsx.eventstore` directory, compile the sink operator to make the JAR files, the project, and the target directories, and the toolkit.xml file by running one of the following commands:
 
    - `sbt toolkit`
    - `./recompile.sh`
@@ -120,7 +118,7 @@ In the preceding table "only one level supported" means the array or map has ele
   - Select **Add Toolkit Location**.
   - Select the directory where the cloned directory is stored and select **OK**.
 
-**Tip:** If you don't want to use a clone, replace steps 1-3 by using a toolkit release for streamsx.eventstore that corresponds to the IBM Db2 Event Store release in a local directory. In step 4, use the directory where the toolkit is saved as the toolkit location.  
+**Tip:** If you don't want to use a clone, replace steps 1-3 by using a toolkit release for streamsx.eventstore that corresponds to the IBM Db2 Event Store release in a local directory. In step 4, use the directory where the toolkit is saved as the toolkit location.
 
 
 ## Building from source
@@ -128,14 +126,14 @@ In the preceding table "only one level supported" means the array or map has ele
 The build instructions assume the following setup:
 
 - IBM Db2 Event Store is running remotely on another machine
-- IBM Streams QSE VM running on VirtualBox or similar  
+- IBM Streams QSE VM running on VirtualBox or similar
 
 
 ### Updating to a new version
 
 If you already installed the toolkit following the instructions in [Installing the toolkit from scratch](#installing-the-tookit-from-scratch) and  need the new version, complete the following steps:
 
-1. Change to your toolkit folder on your virtual machine and run the following commands:
+1. Change to your toolkit folder `com.ibm.streamsx.eventstore` on your virtual machine and run the following commands:
 
     ```
     git pull
@@ -160,10 +158,9 @@ In these instructions, your virtual machine is the Streams QSE VM. These instruc
     For more information, see [Setting up the reference to the IBM Db2 Event Store daemon on your virtual machine](#setting-up-the-reference-to-the-ibm-db2-event-store-daemon-on-your-virtual-machine)
   
     For more information on installing IBM Db2 Event Store, see <https://www.ibm.com/support/knowledgecenter/SSGNPV/eventstore/welcome.html>.
-1. In the top level of the repository, run `sbt toolkit` or `./recompile.sh`. 
+1. In the `com.ibm.streamsx.eventstore` directory, run `sbt toolkit` or `./recompile.sh`. 
 
-   **Tip:** You might need to create `impl/lib/` in the repository for it to run properly.
-1. Create a new IBM Streams project. Add the location of the repository as a toolkit location.
+1. Create a new IBM Streams project. Add the location of the `com.ibm.streamsx.eventstore` directory as a toolkit location.
 1. Start IBM Db2 Event Store on the remote machine (Depending on the version of IBM Db2 Event Store that you have installed, this could be your local host or your cluster.)
 1. Write an IBM Streams test project with EventStoreSink as the sink operator.
 
@@ -195,7 +192,7 @@ To enable the EventStoreSink operator to connect to your remote IBM Db2 Event St
 
 Enter this value for the connectionString parameter. For example: `9.26.150.75:1101,9.26.150.76:1101`
 
-**Tip:** To connect to IBM Db2 Event Store Developer Edition, use the external IP address for the work station where IBM Db2 Event Store is running. Use the same port number that is specified in the sample notebooks that are available in the **Community** section of the IBM Db2 Event Store end user client.  
+**Tip:** To connect to IBM Db2 Event Store Developer Edition, use the external IP address for the work station where IBM Db2 Event Store is running. Use the same port number that is specified in the sample notebooks that are available in the **Community** section of the IBM Db2 Event Store end user client.
 
 If you are running IBM Db2 Event Store Developer Edition on a Mac, you can find the external IP address in **System Preferences > Network**.
 
@@ -229,10 +226,10 @@ You can define the following parameters for the Event Store:
 
 ## Optional output port
 
-An optional output port exists in the EventStoreSink operator. This output port is intended to output the information on whether a tuple was successful or not when it was inserted into the database. EventStoreSink looks for a Boolean field called "_Inserted_" in the output stream. EventStoreSink sets the field to `true` if the data was successfully inserted and `false` if the insert failed. 
+An optional output port exists in the EventStoreSink operator. This output port is intended to output the information on whether a tuple was successful or not when it was inserted into the database. EventStoreSink looks for a Boolean field called `_Inserted_` in the output stream. EventStoreSink sets the field to `true` if the data was successfully inserted and `false` if the insert failed. 
 
-Besides the "_Inserted_" column, the output will include the original tuple that was processed by the EventStoreSink operator. 
+Besides the `_Inserted_` column, the output will include the original tuple that was processed by the EventStoreSink operator. 
 
-The output stream can be used to tie in with an SQS operator to enable it to use the "_Inserted_" flag to remove successfully inserted tuples from the SQS query. If the tuple is not inserted, the tuple must remain in the SQS query so that it can be resubmitted for insertion again. 
+The output stream can be used to tie in with an SQS operator to enable it to use the `_Inserted_` flag to remove successfully inserted tuples from the SQS query. If the tuple is not inserted, the tuple must remain in the SQS query so that it can be resubmitted for insertion again. 
 
 To add the output port for the sink operator, add the output port explicitly in the operator properties and define the schema for the output stream. 

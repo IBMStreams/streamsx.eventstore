@@ -1,0 +1,116 @@
+/*
+** Copyright (C) 2019  International Business Machines Corporation
+** All Rights Reserved
+*/
+namespace com.ibm.streamsx.eventstore.sample;
+
+use com.ibm.streamsx.eventstore::*;
+
+/**
+ * This sample application demonstrates how to use the EventStoreSink operator with optional output port for the results.
+ * The output streams contains an attribute "_Inserted_" to indicate the result of the insert (true or false).
+ *
+ * @param connectionString;
+ * Parameter to configure the connection to the Event Store database
+ *
+ * @param batchSize
+ * Optional parameter to set the batch size, default: 50
+ * 
+ * @param databaseName
+ * Optional parameter to set the database name, default: TESTDB
+ *
+ * @param tableName
+ * Optional parameter to set the table name, default: ReviewTable
+ *
+ * @param eventStoreUser
+ * The user ID to use to conect to IBM DB2 Event Store. If you don't specify the eventStoreUser parameter, the admin user is used.
+ *
+ * @param eventStorePassword
+ * The password to use to connect to IBM Db2 Event Store. If you do not specify the eventStoreUser paramater, a default is used.
+ * 
+ */
+public composite InsertSample {
+	param
+		expression<rstring> $connectionString: getSubmissionTimeValue("connectionString");
+		expression<int32>   $batchSize: (int32)getSubmissionTimeValue("batchSize", "50");
+		expression<rstring> $databaseName : getSubmissionTimeValue("databaseName", "TESTDB");
+		expression<rstring> $tableName : getSubmissionTimeValue("tableName", "ReviewTable");
+		expression<rstring> $eventStoreUser : getSubmissionTimeValue("eventStoreUser", ""); // empty uses default
+		expression<rstring> $eventStorePassword : getSubmissionTimeValue("eventStorePassword", ""); // empty uses default
+
+	graph
+
+		stream<rstring result> SampleRes = InsertSampleComp() {
+			param
+				connectionString: $connectionString;
+				batchSize: $batchSize;
+				databaseName: $databaseName;
+				tableName: $tableName;
+				eventStoreUser: $eventStoreUser;
+				eventStorePassword: $eventStorePassword;
+		}	
+}
+
+/**
+ * Used by InsertSample main composite and test application
+ *
+ * @param connectionString;
+ * Parameter to configure the connection to the Event Store database
+ *
+ * @param batchSize
+ * Optional parameter to set the batch size, default: 50
+ * 
+ * @param databaseName
+ * Optional parameter to set the database name, default: TESTDB
+ *
+ * @param tableName
+ * Optional parameter to set the table name, default: ReviewTable
+ * 
+ * @output SampleResult
+ * This stream is evaluated by the tester.
+ */
+public composite InsertSampleComp (output SampleResult) {
+	param
+		expression<rstring> $connectionString;
+		expression<int32>   $batchSize: 50;
+		expression<rstring> $databaseName: "TESTDB";
+		expression<rstring> $tableName: "ReviewTable";
+		expression<rstring> $eventStoreUser : ""; // empty uses default
+		expression<rstring> $eventStorePassword : ""; // empty uses default
+		expression<int32>   $iterations: 300;
+
+	graph
+		
+		stream<int64 userId, int32 categoryId, rstring productName, boolean boolfield, boolean boolfield2, int32 duration, rstring review> Beacon = spl.utility::Beacon() {
+			param
+				period: 0.1;
+				iterations: $iterations;
+			output
+				Beacon:
+					categoryId=(int32)IterationCount(),
+					productName='ProdValue',
+					userId=(int64)IterationCount();
+		}
+
+		stream<int64 userId, int32 categoryId, rstring productName, boolean boolfield, boolean boolfield2, int32 duration, rstring review, boolean _Inserted_> InsertResults = com.ibm.streamsx.eventstore::EventStoreSink(Beacon) {
+			param
+				batchSize: $batchSize;
+				connectionString: $connectionString;
+				databaseName: $databaseName;
+				primaryKey: 'userId';
+				tableName: $tableName;
+				eventStoreUser: $eventStoreUser;
+				eventStorePassword: $eventStorePassword;
+		}
+
+		stream<rstring result> SampleResult = Custom(InsertResults as I)  {
+			logic
+			onTuple I: {
+				println((rstring) I);
+				if(I._Inserted_) {
+					submit ({result="ok"}, SampleResult);
+				}
+			}
+		}
+
+}

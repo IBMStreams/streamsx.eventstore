@@ -30,10 +30,10 @@ libraryDependencies ++= Seq(
   //"com.ibm.event" % "ibm-db2-eventstore-client" % "1.1.0", // For IBM Db2 Event Store Enterprise edition v1.1.0
   //"com.ibm.event" % "ibm-db2-eventstore-client" % "1.1.1", // For IBM Db2 Event Store Enterprise edition v1.1.1
   //"com.ibm.event" % "ibm-db2-eventstore-client" % "1.1.2", // For IBM Db2 Event Store Enterprise edition v1.1.2
-  "com.ibm.event" % "ibm-db2-eventstore-client" % "1.1.3", // For IBM Db2 Event Store Enterprise edition v1.1.3
+  //"com.ibm.event" % "ibm-db2-eventstore-client" % "1.1.3", // For IBM Db2 Event Store Enterprise edition v1.1.3
   //"com.ibm.event" % "ibm-event-desktop" % "1.1.1", // For IBM Db2 Event Store Developer edition v1.1.1
   //"com.ibm.event" % "ibm-db2-eventstore-desktop-client" % "1.1.2", // For IBM Db2 Event Store Developer edition v1.1.2
-  //"com.ibm.event" % "ibm-db2-eventstore-desktop-client" % "1.1.4", // For IBM Db2 Event Store Developer edition v1.1.4
+  "com.ibm.event" % "ibm-db2-eventstore-desktop-client" % "1.1.4", // For IBM Db2 Event Store Developer edition v1.1.4
 
   "com.google.protobuf" % "protobuf-java" % "2.5.0",
   "org.apache.spark" %% "spark-core" % sparkver intransitive(), 
