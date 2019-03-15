@@ -2,7 +2,7 @@ import scala.language.postfixOps // <- making IntelliJ hush about the ! bash com
 
 name := "streamsx.eventstore"
 organization := "com.ibm"
-version := "1.1.0-RELEASE"
+version := "0.3.0-RELEASE"
 scalaVersion := "2.11.8"
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 compileOrder in Compile := CompileOrder.ScalaThenJava
@@ -99,6 +99,8 @@ dist := {
   val excludes = Seq(
     "build.sbt",
     "data",
+    "recompile.sh",
+    "scalastyle-config.xml",
     "lib/com.ibm.streams.operator.jar",
     "output",
     "project",
@@ -108,6 +110,7 @@ dist := {
     ".classpath",
     ".git",
     ".gitignore",
+    ".gitkeep",
     ".project",
     ".settings",
     ".toolkitList"
