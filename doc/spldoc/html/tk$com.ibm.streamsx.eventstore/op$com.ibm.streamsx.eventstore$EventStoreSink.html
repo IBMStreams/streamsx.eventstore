@@ -22,7 +22,7 @@
 <div class="body refbody">
 <div class="section">
 <p class="p">
-<a class="xref" href="../toolkits/toolkits.html">Toolkits</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 0.1.0</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; EventStoreSink</p>
+<a class="xref" href="../toolkits/toolkits.html">Toolkits</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 0.3.0</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; EventStoreSink</p>
 
 </div>
 
@@ -32,8 +32,20 @@
 
 <div class="section">
 
-<p class="p">Java Operator EventStoreSink
+<p class="p">The EventStoreSink inserts IBM Streams tuples in to an IBM Db2 Event Store table.
 </p>
+
+  <dl class="dl"><dt class="dt dlterm"><a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink$1.html">Data Types</a>
+</dt>
+<dd class="dd">
+</dd>
+</dl>
+
+  <dl class="dl"><dt class="dt dlterm"><a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink$2.html">Example</a>
+</dt>
+<dd class="dd">
+</dd>
+</dl>
 
 </div>
 
@@ -43,7 +55,7 @@
  
   <dt class="dt dlterm">Ports</dt>
 
-  <dd class="dd">This operator has 1 or more input ports and 1 output port.</dd>
+  <dd class="dd">This operator has 1 input port and 1 output port.</dd>
 
  
  
@@ -71,7 +83,7 @@
  
   <dt class="dt dlterm">Metrics</dt>
 
-  <dd class="dd">This operator does not report any metrics.</dd>
+  <dd class="dd">This operator reports 5 metrics.</dd>
 
  
 </dl>
@@ -98,7 +110,7 @@
 
    <dd class="dd">
 
-<p class="p">Port that ingests tuples
+<p class="p">Port that ingests tuples which are inserted into Db2 Event Store database table. The tuple field types and positions in the IBM Streams schema must match the field names in your IBM Db2 Event Store table schema exactly.Incoming tuples are processed in batches, where the processing will be to send rows to IBM Db2 Event Store, and is driven by the size of the batch. A batch is processed when it reaches at least the batch size.
 </p>
    </dd>
 
@@ -128,38 +140,6 @@
       </dd>
 
     
-  
-   <dt class="dt dlterm">Ports (1...)</dt>
-
-    <dd class="dd">
-
-<p class="p">Optional input ports
-</p>
-   <dl class="dl">
-    
-      <dt class="dt dlterm">Properties</dt>
-
-      <dd class="dd">
-   <ul class="sl simple">
-     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__input_port_set__controlport">ControlPort</a>: false
-</li>
-
-     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__input_port_set__windowingmode">WindowingMode</a>: NonWindowed
-</li>
-
-     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__input_port_set__windowpunctuationinputmode">WindowPunctuationInputMode</a>: Oblivious
-</li>
-
-   </ul>
-
-      </dd>
-
-    
-   </dl>
-
-  </dd>
-
-
 </dl>
 
 </div>
@@ -182,7 +162,7 @@
 
    <dd class="dd">
 
-<p class="p">Port that optionally produces tuple insert results
+<p class="p">Port that optionally produces tuple insert results. This output port is intended to output the information on whether a tuple was successful or not when it was inserted into the database. EventStoreSink looks for a Boolean field called <tt class="ph tt">_Inserted_</tt> in the output stream. EventStoreSink sets the field to <tt class="ph tt">true</tt> if the data was successfully inserted and <tt class="ph tt">false</tt> if the insert failed. Besides the <tt class="ph tt">_Inserted_</tt> column, the output will include the original tuple attributes (from input stream) that was processed by the EventStoreSink operator. 
 </p>
 
 <p class="p"/>
@@ -235,7 +215,7 @@ This operator supports 13 parameters.
 <dt class="dt dlterm"><a name="spldoc_operator__parameter__batchSize"><!-- --></a><tt class="ph tt">batchSize</tt></dt>
 
 <dd class="dd">
-<p class="p">Set the batch size.
+<p class="p">Specifies the batch size for the number of rows that will be batched in the operator before the batch is inserted into IBM Db2 Event Store by using the <tt class="ph tt">batchInsertAsync</tt> method. If you do not specify this parameter, the batchSize defaults to the estimated number of rows that could fit into an 8K memory page.
 </p>
 <dl class="dl">
 
@@ -266,7 +246,7 @@ This operator supports 13 parameters.
 <dt class="dt dlterm"><a name="spldoc_operator__parameter__configObject"><!-- --></a><tt class="ph tt">configObject</tt></dt>
 
 <dd class="dd">
-<p class="p">Application configuration name
+<p class="p">Specify the application configuration name. An application configuration can be created in the Streams Console or using the <tt class="ph tt">streamtool mkappconfig ... &lt;configObject name&gt;</tt>. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: <tt class="ph tt">eventStoreUser</tt> and <tt class="ph tt">eventStorePassword</tt>
 </p>
 <dl class="dl">
 
@@ -297,7 +277,7 @@ This operator supports 13 parameters.
 <dt class="dt dlterm"><a name="spldoc_operator__parameter__connectionString"><!-- --></a><tt class="ph tt">connectionString</tt></dt>
 
 <dd class="dd">
-<p class="p">Set the IBM Db2 Event Store connection string: &lt;IP&gt;:&lt;port&gt;
+<p class="p">Specifies the IBM Db2 Event Store connection endpoint as a set of IP addresses and ports: &lt;IP&gt;:&lt;port&gt;. Separate multiple entries with a comma.
 </p>
 <dl class="dl">
 
@@ -328,7 +308,7 @@ This operator supports 13 parameters.
 <dt class="dt dlterm"><a name="spldoc_operator__parameter__databaseName"><!-- --></a><tt class="ph tt">databaseName</tt></dt>
 
 <dd class="dd">
-<p class="p">Name of the EventStore database in order to connect
+<p class="p">The name of an existing IBM Db2 Event Store database in order to connect
 </p>
 <dl class="dl">
 
@@ -359,7 +339,7 @@ This operator supports 13 parameters.
 <dt class="dt dlterm"><a name="spldoc_operator__parameter__eventStorePassword"><!-- --></a><tt class="ph tt">eventStorePassword</tt></dt>
 
 <dd class="dd">
-<p class="p">Password for the IBM Db2 Event Store User in order to connect
+<p class="p">Password for the IBM Db2 Event Store User in order to connect. If you do not specify the <tt class="ph tt">eventStorePassword</tt> parameter or an empty string is set, then a default is used.
 </p>
 <dl class="dl">
 
@@ -390,7 +370,7 @@ This operator supports 13 parameters.
 <dt class="dt dlterm"><a name="spldoc_operator__parameter__eventStoreUser"><!-- --></a><tt class="ph tt">eventStoreUser</tt></dt>
 
 <dd class="dd">
-<p class="p">Name of the IBM Db2 Event Store User in order to connect
+<p class="p">Name of the IBM Db2 Event Store User in order to connect. If you do not specify the <tt class="ph tt">eventStoreUser</tt> parameter or an empty string is set, then a default is used.
 </p>
 <dl class="dl">
 
@@ -514,7 +494,7 @@ This operator supports 13 parameters.
 <dt class="dt dlterm"><a name="spldoc_operator__parameter__partitioningKey"><!-- --></a><tt class="ph tt">partitioningKey</tt></dt>
 
 <dd class="dd">
-<p class="p">Partitioning key for the table
+<p class="p">Partitioning key for the table. A string of attribute names separated by commas. The order of the attribute names defines the order of entries in the sharding key for the IBM Db2 Event Store table. The attribute names are the names of the fields in the stream. The <tt class="ph tt">partitioningKey</tt> parameter is used only if the table does not yet exist in the IBM Db2 Event Store database. If you do not specify this parameter or if the key string is empty, the key defaults to making the first column in the stream as the shard key. For example, "col1, col2, col3"
 </p>
 <dl class="dl">
 
@@ -576,7 +556,7 @@ This operator supports 13 parameters.
 <dt class="dt dlterm"><a name="spldoc_operator__parameter__primaryKey"><!-- --></a><tt class="ph tt">primaryKey</tt></dt>
 
 <dd class="dd">
-<p class="p">Primary key for the table
+<p class="p">Primary key for the table. A string of attribute names separated by commas. The order of the attribute names defines the order of entries in the primary key for the IBM Db2 Event Store table. The attribute names are the names of the fields in the stream. The <tt class="ph tt">primaryKey</tt> parameter is used only, if the table does not yet exist in the IBM Db2 Event Store database. If you do not specify this parameter, the resulting table has an empty primary key.
 </p>
 <dl class="dl">
 
@@ -607,7 +587,7 @@ This operator supports 13 parameters.
 <dt class="dt dlterm"><a name="spldoc_operator__parameter__tableName"><!-- --></a><tt class="ph tt">tableName</tt></dt>
 
 <dd class="dd">
-<p class="p">Name of the EventStore table to insert tuples
+<p class="p">The name of the table into which you want to insert data from the IBM Streams application. If the table does not exist, the table is automatically created in IBM Db2 Event Store.
 </p>
 <dl class="dl">
 
@@ -634,6 +614,78 @@ This operator supports 13 parameters.
 </dd>
 
 
+</dl>
+
+</div>
+
+<div class="section">
+<p class="p splhead-1"><strong class="ph b"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics">Metrics</a></strong></p>
+<dl class="dl">
+  
+    <dt class="dt dlterm"><tt class="ph tt">NumBatchesPerInsert</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_gauge">Gauge</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Number of batches inserted together
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">PerInsertTime</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_gauge">Gauge</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Time it takes to perform a successful batch insert
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">nActiveInserts</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_counter">Counter</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Number of active insert requests
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">nWriteFailures</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_counter">Counter</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Number of tuples that failed to get written to IBM Db2 Event Store
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">nWriteSuccesses</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_counter">Counter</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Number of tuples that were written to IBM Db2 Event Store successfully
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
 </dl>
 
 </div>

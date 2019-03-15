@@ -16,10 +16,12 @@ sidebar:
 
 * [SPLDoc for the streamsx.eventstore toolkit](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc/html/index.html)
 
+The toolkit [0.1.0,1.0.0) is intended for use with IBM Streams release 4.2 and later.
+
 ## [](#header-2)Prerequisites
 
 1.  **IBM Streams** -- If you don't have this installed, you can try it by downloading the [Quick Start Edition](http://ibm.co/streamsqs).
-2.  **streamsx.eventstore** -- Download the toolkit release [latest](https://github.com/IBMStreams/streamsx.eventstore/releases/latest)
+2.  **streamsx.eventstore** -- Download the toolkit release. You can find precompiled EventStoreSink toolkits for various IBM Db2 Event Store [RELEASES](https://github.com/IBMStreams/streamsx.eventstore/releases)
 3.  Add the toolkit as a dependency to your Streams application.
 
 ## [](#header-3)Samples
