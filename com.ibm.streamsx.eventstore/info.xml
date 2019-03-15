@@ -3,8 +3,21 @@
                        xmlns:info="http://www.ibm.com/xmlns/prod/streams/spl/toolkitInfo">
     <info:identity>
         <info:name>com.ibm.streamsx.eventstore</info:name>
-        <info:description></info:description>
-        <info:version>0.2.0</info:version>
+    <info:description><![CDATA[
+The Eventstore toolkit is an open source IBM Streams toolkit that provides adapters for the 
+[https://www.ibm.com/products/db2-event-store|Db2 Event Store] database.
+
+IBM Db2 Event Store is an in-memory database designed to rapidly ingest and analyze streamed data in event-driven applications. It provides the fabric for fast data with its ability to process massive volume of events in real-time, coupled with optimization for streamed data performance for advanced analytics and actionable insights.
+
+**It provides the operators**
+* `EventStoreSink` to insert tuple data 
+
+**The EventStoreSink operator supports the following features**
+* Streams application configuration
+* Consistent region support to achieve at-least-once semantic where appropriate
+
+]]></info:description>
+        <info:version>0.3.0</info:version>
         <info:requiredProductVersion>4.2.0.0</info:requiredProductVersion>
     </info:identity>
     <info:dependencies/>

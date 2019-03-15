@@ -73,7 +73,7 @@ import java.io.StringWriter;
 
 /**
  * IBM Db2 Event Store streams sink operator class 
- * that consumes tuples and does not
+ * that consumes tuples and does optionally
  * produce an output stream. Incoming tuples are processed in batches, where
  * the processing will be to send rows to IBM Db2 Event Store, and is driven by
  * the size of the batch and a timeout. A batch is processed when it reaches at
@@ -93,14 +93,21 @@ import java.io.StringWriter;
  * Note that this operator will work in a consistent region. <BR>
  * </P>
  */
-@PrimitiveOperator(name="EventStoreSink", namespace="com.ibm.streamsx.eventstore",
-        description="Java Operator EventStoreSink")
-@InputPorts({
-        @InputPortSet(description="Port that ingests tuples", cardinality=1, optional=false, windowingMode=WindowMode.NonWindowed, windowPunctuationInputMode=WindowPunctuationInputMode.Oblivious),
-        @InputPortSet(description="Optional input ports", optional=true, windowingMode=WindowMode.NonWindowed, windowPunctuationInputMode=WindowPunctuationInputMode.Oblivious)
+@PrimitiveOperator(name="EventStoreSink", namespace="com.ibm.streamsx.eventstore", description=
+EventStoreSink.operatorDescription +
+EventStoreSink.DATA_TYPES + 
+EventStoreSink.SPL_EXAMPLES_DESC
+)
+@InputPorts({@InputPortSet(
+	id="0",
+	description=EventStoreSink.iport0Description,
+	cardinality=1,
+	optional=false,
+	windowingMode=WindowMode.NonWindowed,
+	windowPunctuationInputMode=WindowPunctuationInputMode.Oblivious)
 })
 @OutputPorts({
-    @OutputPortSet(description="Port that optionally produces tuple insert results", cardinality=1, optional=true)
+    @OutputPortSet(description=EventStoreSink.oport0Description, cardinality=1, optional=true)
 })
 
 public class EventStoreSink extends AbstractOperator implements StateHandler {
@@ -136,12 +143,12 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     OperatorMetrics opMetrics = null;
 
     /* Metrics include the count of the number of batches that failed to be processed by IBM Db2 Event Store
-     *  (failures), the number of successful batches sent and processed by Event Store (successes), 
+     *  (nWriteFailures), the number of successful batches sent and processed by Event Store (nWriteSuccesses), 
      *  the time spent by Event Store to process a batch (insertGaugeTime), and at any given batch processing
      *  time there is a count of the number of batches processed together (numBatchesPerInsert).
      */
-    Metric failures = null;
-    Metric successes = null;
+    Metric nWriteFailures = null;
+    Metric nWriteSuccesses = null;
     Metric insertGaugeTime = null;
     Metric numBatchesPerInsert = null;
     Metric nActiveInserts = null;
@@ -171,12 +178,32 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private ConsistentRegionContext crContext;
     private Object drainLock = new Object();
     public static final long CONSISTENT_REGION_DRAIN_WAIT_TIME = 180000;
-
+    
 	// Initialize the metrics
     @CustomMetric (kind = Metric.Kind.COUNTER, name = "nActiveInserts", description = "Number of active insert requests")
     public void setnActiveInserts (Metric nActiveInserts) {
         this.nActiveInserts = nActiveInserts;
-    }    
+    }
+    
+    @CustomMetric (kind = Metric.Kind.COUNTER, name = "nWriteFailures", description = "Number of tuples that failed to get written to IBM Db2 Event Store")
+    public void setnWriteFailures (Metric nWriteFailures) {
+        this.nWriteFailures = nWriteFailures;
+    }
+    
+    @CustomMetric (kind = Metric.Kind.COUNTER, name = "nWriteSuccesses", description = "Number of tuples that were written to IBM Db2 Event Store successfully")
+    public void setnWriteSuccesses (Metric nWriteSuccesses) {
+        this.nWriteSuccesses = nWriteSuccesses;
+    }
+
+    @CustomMetric (kind = Metric.Kind.GAUGE, name = "PerInsertTime", description = "Time it takes to perform a successful batch insert")
+    public void setPerInsertTime (Metric insertGaugeTime) {
+        this.insertGaugeTime = insertGaugeTime;
+    }
+    
+    @CustomMetric (kind = Metric.Kind.GAUGE, name = "NumBatchesPerInsert", description = "Number of batches inserted together")
+    public void setnumBatchesPerInsert (Metric numBatchesPerInsert) {
+        this.numBatchesPerInsert = numBatchesPerInsert;
+    }
     
     /* InsertRunnable is the process that obtains a batch from a queue and processes it by sending to IBM Db2 Event Store.
      * It should be noted that this will execute asynchronously with the process that receives rows from the input.
@@ -246,12 +273,12 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         }
 
         // Write out a checkpoint state and not the order of writes must be adhere to in reset for order of reads
-        checkpoint.getOutputStream().writeLong(failures.getValue());
-        checkpoint.getOutputStream().writeLong(successes.getValue());
+        checkpoint.getOutputStream().writeLong(getWriteFailuresMetric().getValue());
+        checkpoint.getOutputStream().writeLong(getWriteSuccessesMetric().getValue());
         //checkpoint.getOutputStream().writeLong(insertGaugeTime.getValue()); does not need to be save as its a single value in time
         //checkpoint.getOutputStream().writeLong(numBatchesPerInsert.getValue()); does not need to be save as its a single value in time
         if (tracer.isDebugEnabled()) {
-        	tracer.log(TraceLevel.DEBUG, "CHECKPOINT completed with failcount = " + failures.getValue() + " success count = " + successes.getValue());
+        	tracer.log(TraceLevel.DEBUG, "CHECKPOINT completed with failcount = " + getWriteFailuresMetric().getValue() + " success count = " + getWriteSuccessesMetric().getValue());
         }
     }
 
@@ -339,60 +366,18 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     	if (tracer.isInfoEnabled()) {
     		tracer.log(TraceLevel.INFO, "Operator " + context.getName() + " initializing in PE: " + context.getPE().getPEId() + " in Job: " + context.getPE().getJobId() );
     	}
-        opMetrics = null;
-        failures = null;
-        successes = null;
-        insertGaugeTime = null;
-        numBatchesPerInsert = null;
 
         // Get the consistent region context
         crContext = context.getOptionalContext(ConsistentRegionContext.class);
 
         batchQueue = new ArrayBlockingQueue<LinkedList</*Row*/Tuple>>(numMaxActiveBatches*maxNumActiveBatches);
 
-        // Set up the metrics to count the number of batch insert failures and successes.
-        // If the metrics exists then use those, otherwise create them. Then use the input counts
-        // to set them to previous values that existed at a checkpoint when consistent regions are used.
-        opMetrics = getOperatorContext().getMetrics();
-
-        try {
-            failures = opMetrics.createCustomMetric("nWriteFailures",
-                    "Number of tuples that failed to get written to IBM Db2 Event Store", Metric.Kind.COUNTER);
-        } catch(Exception e) {
-            tracer.log(TraceLevel.ERROR, "nWriteFailures metric exists.\n" + stringifyStackTrace(e));
-            failures = opMetrics.getCustomMetric("nWriteFailures");
-        }
-
-        try {
-            successes = opMetrics.createCustomMetric("nWriteSuccesses",
-                    "Number of tuples that were written to IBM Db2 Event Store successfully", Metric.Kind.COUNTER);
-        } catch(Exception e) {
-            tracer.log(TraceLevel.ERROR, "nWriteSuccesses metric exists.\n" + stringifyStackTrace(e));
-            successes = opMetrics.getCustomMetric("nWriteSuccesses");
-        }
-
-        try {
-            insertGaugeTime = opMetrics.createCustomMetric("PerInsertTime",
-                    "Time it takes to perform a successful batch insert", Metric.Kind.GAUGE);
-        } catch(Exception e) {
-            tracer.log(TraceLevel.ERROR, "PerInsertTime metric exists.\n" + stringifyStackTrace(e));
-            insertGaugeTime = opMetrics.getCustomMetric("PerInsertTime");
-        }
-
-        try {
-            numBatchesPerInsert = opMetrics.createCustomMetric("NumBatchesPerInsert",
-                    "Number of batches inserted together", Metric.Kind.GAUGE);
-        } catch(Exception e) {
-            tracer.log(TraceLevel.ERROR, "NumBatchesPerInsert metric exists.\n" + stringifyStackTrace(e));
-            numBatchesPerInsert = opMetrics.getCustomMetric("NumBatchesPerInsert");
-        }
-
         if( failCount > 0 ){
-            failures.setValue(failCount);
+            getWriteFailuresMetric().setValue(failCount);
         }
 
         if( successCount > 0 ){
-            successes.setValue(successCount);
+            getWriteSuccessesMetric().setValue(successCount);
         }
 
         // Determine if we have the output port related to sending insert rows to it when inserts have failed
@@ -726,10 +711,10 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         return batchSize;
     }
 
-    @Parameter(name="databaseName", description = "Name of the EventStore database in order to connect")
+    @Parameter(name="databaseName", description = "The name of an existing IBM Db2 Event Store database in order to connect")
     public void setDatabaseName(String s) {databaseName = s;}
 
-    @Parameter(name="tableName", description = "Name of the EventStore table to insert tuples")
+    @Parameter(name="tableName", description = "The name of the table into which you want to insert data from the IBM Streams application. If the table does not exist, the table is automatically created in IBM Db2 Event Store.")
     public void setTableName(String s) {tableName = s;}
 
     private String stringifyStackTrace(Exception e) {
@@ -744,7 +729,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      *            If null then the code will use a Event Store config file to connect
      */
     @Parameter(name="connectionString", 
-            description="Set the IBM Db2 Event Store connection string: <IP>:<port>")
+            description="Specifies the IBM Db2 Event Store connection endpoint as a set of IP addresses and ports: <IP>:<port>. Separate multiple entries with a comma.")
     public synchronized void setConnectionString( String connectString ) {
         connectionString = connectString;
     }
@@ -772,7 +757,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      *            New batch size, must be one or greater.
      */
     @Parameter(name="batchSize", optional=true,
-            description="Set the batch size.")
+            description="Specifies the batch size for the number of rows that will be batched in the operator before the batch is inserted into IBM Db2 Event Store by using the `batchInsertAsync` method. If you do not specify this parameter, the batchSize defaults to the estimated number of rows that could fit into an 8K memory page.")
     public synchronized void setBatchSize(int batchSize) throws Exception {
         if (batchSize <= 0)
             throw new IllegalArgumentException(
@@ -839,7 +824,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
 
     @Parameter(name = "configObject", optional=true, 
-               description = "Application configuration name")
+               description = "Specify the application configuration name. An application configuration can be created in the Streams Console or using the `streamtool mkappconfig ... <configObject name>`. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: `eventStoreUser` and `eventStorePassword`")
     public void setConfigObject(String s) { cfgObjectName = s; }
 
     /**
@@ -849,7 +834,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
 
     @Parameter(name="eventStoreUser", optional=true,
-		description = "Name of the IBM Db2 Event Store User in order to connect")
+		description = "Name of the IBM Db2 Event Store User in order to connect. If you do not specify the `eventStoreUser` parameter or an empty string is set, then a default is used.")
     public void setEventStoreUser(String s) {
     	if (!("".equals(s))) {
     		eventStoreUser = s;
@@ -863,7 +848,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
 
     @Parameter(name="eventStorePassword", optional=true,
-		description = "Password for the IBM Db2 Event Store User in order to connect")
+		description = "Password for the IBM Db2 Event Store User in order to connect. If you do not specify the `eventStorePassword` parameter or an empty string is set, then a default is used.")
     public void setEventStorePassword(String s) {
     	if (!("".equals(s))) {
     		eventStorePassword = s;
@@ -879,7 +864,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
 
     @Parameter(name="partitioningKey", optional=true,
-		description = "Partitioning key for the table")
+		description = "Partitioning key for the table. A string of attribute names separated by commas. The order of the attribute names defines the order of entries in the sharding key for the IBM Db2 Event Store table. The attribute names are the names of the fields in the stream. The `partitioningKey` parameter is used only if the table does not yet exist in the IBM Db2 Event Store database. If you do not specify this parameter or if the key string is empty, the key defaults to making the first column in the stream as the shard key. For example, \\\"col1, col2, col3\\\"")
     public void setPartitioningKey(String s) {partitioningKey = s;}
 
     /**
@@ -891,7 +876,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
 
     @Parameter(name="primaryKey", optional=true,
-		description = "Primary key for the table")
+		description = "Primary key for the table. A string of attribute names separated by commas. The order of the attribute names defines the order of entries in the primary key for the IBM Db2 Event Store table. The attribute names are the names of the fields in the stream. The `primaryKey` parameter is used only, if the table does not yet exist in the IBM Db2 Event Store database. If you do not specify this parameter, the resulting table has an empty primary key.")
     public void setPrimaryKey(String s) {primaryKey = s;}
 
     /**
@@ -1007,8 +992,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
           		tracer.log(TraceLevel.DEBUG, "Insert (success time) = " + endTime);
           		tracer.log(TraceLevel.DEBUG, "*** SUCCESSFUL INSERT");
               }
-              if(successes != null) successes.increment();
-              if(insertGaugeTime != null) insertGaugeTime.setValue(endTime);
+              getWriteSuccessesMetric().increment();
+              getInsertGaugeTimeMetric().setValue(endTime);
               submitResultTuple(batch, true);
               getActiveInsertsMetric().incrementValue(-1);
               batch.clear();
@@ -1017,7 +1002,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
               if (tracer.isDebugEnabled()) {
           		tracer.log(TraceLevel.DEBUG, "Insert (failure time) = " + endTime);
               }
-              if(failures != null) failures.increment();
+              getWriteFailuresMetric().increment();
               tracer.log(TraceLevel.ERROR, "Failed to write tuple to EventStore.\n"+ stringifyStackTrace(e) );
               submitResultTuple(batch, false);
               getActiveInsertsMetric().incrementValue(-1);
@@ -1065,6 +1050,140 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     
 	public Metric getActiveInsertsMetric() {
 		return nActiveInserts;
-	}    
+	}
+
+	public Metric getWriteFailuresMetric() {
+		return nWriteFailures;
+	}
+	
+	public Metric getWriteSuccessesMetric() {
+		return nWriteSuccesses;
+	}
+	
+	public Metric getInsertGaugeTimeMetric() {
+		return insertGaugeTime;
+	}
+	// operator and port documentation -------------------------------------------------------------------------------------------------------
+
+	static final String operatorDescription = 
+			"The EventStoreSink inserts IBM Streams tuples in to an IBM Db2 Event Store table."
+			;
+	
+	static final String iport0Description =
+			"Port that ingests tuples which are inserted into Db2 Event Store database table. "
+			+ "The tuple field types and positions in the IBM Streams schema must match the field names in your IBM Db2 Event Store table schema exactly."
+			+ "Incoming tuples are processed in batches, where the processing will be to send rows to IBM Db2 Event Store, and is driven by the size of the batch. A batch is processed when it reaches at least the batch size."
+			;
+
+	static final String oport0Description =
+			"Port that optionally produces tuple insert results."
+			+ "\\nThis output port is intended to output the information on whether a tuple was successful or not when it was inserted into the database. EventStoreSink looks for a Boolean field called `_Inserted_` in the output stream. EventStoreSink sets the field to `true` if the data was successfully inserted and `false` if the insert failed." 
+			+ "\\nBesides the `_Inserted_` column, the output will include the original tuple attributes (from input stream) that was processed by the EventStoreSink operator. "
+			;
+
+    public static final String DATA_TYPES =
+			"\\n"+
+			"\\n+ Data Types\\n"+
+			"\\n"
+            + "---\\n"
+            + "| SPL type | Support status | Event Store type |\\n"
+            + "|===|\\n"
+            + "| boolean | Supported | Boolean |\\n"
+            + "|---|\\n"
+            + "| enum | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| int8 | Supported | Byte |\\n"
+            + "|---|\\n"
+            + "| int16 | Supported | Short |\\n"
+            + "|---|\\n"
+            + "| int32 | Supported | Int |\\n"
+            + "|---|\\n"
+            + "| int64 | Supported | Long |\\n"
+            + "|---|\\n"
+            + "| uint8 | Supported | Byte |\\n"
+            + "|---|\\n"
+            + "| uint16 | Supported | Short |\\n"
+            + "|---|\\n"
+            + "| uint32 | Supported | Int |\\n"
+            + "|---|\\n"
+            + "| uint64 | Supported | Long |\\n"
+            + "|---|\\n"
+            + "| float32 | Supported | Float |\\n"
+            + "|---|\\n"
+            + "| float64 | Supported | Double |\\n"
+            + "|---|\\n"
+            + "| decimal32 | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| decimal64 | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| decimal128 | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| complex32 | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| complex64 | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| timestamp | Supported | java.sql.Timestamp |\\n"
+            + "|---|\\n"
+            + "| rstring | Supported | String |\\n"
+            + "|---|\\n"
+            + "| ustring | Supported | String |\\n"
+            + "|---|\\n"
+            + "| blob | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| xml | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| list<T> | Only one level supported | Array<T> |\\n"
+            + "|---|\\n"
+            + "| bounded list type | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| set<T> | Only one level supported | Array<T> |\\n"
+            + "|---|\\n"
+            + "| bounded set type | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| map<K,V> | Only one level supported | Map<K,V> |\\n"
+            + "|---|\\n"
+            + "| bounded map type | Not supported | N/A |\\n"
+            + "|---|\\n"
+            + "| tuple<T name, ...> | Not supported | N/A |\\n"
+            + "---\\n"
+            +"\\nIn the preceding table \\\"only one level supported\\\" means the array or map has elements and keys that are primitive data types."           
+            ;
+	
+	public static final String SPL_EXAMPLES_DESC =
+			"\\n"+
+			"\\n+ Example\\n"+
+			"\\nSPL example demonstrates the usage of the EventStoreSink operator:\\n" +
+		    "\\n    composite Main {"+
+		    "\\n        param"+
+		    "\\n            expression<rstring> $connectionString: getSubmissionTimeValue(\\\"connectionString\\\");"+
+		    "\\n            expression<int32>   $batchSize: (int32)getSubmissionTimeValue(\\\"batchSize\\\", \\\"1000\\\");"+
+		    "\\n            expression<rstring> $databaseName: getSubmissionTimeValue(\\\"databaseName\\\");"+
+		    "\\n            expression<rstring> $tableName: getSubmissionTimeValue(\\\"tableName\\\");"+
+		    "\\n            expression<rstring> $eventStoreUser: getSubmissionTimeValue(\\\"eventStoreUser\\\", \\\"\\\");"+
+		    "\\n            expression<rstring> $eventStorePassword: getSubmissionTimeValue(\\\"eventStorePassword\\\", \\\"\\\");"+ 
+		    "\\n    "+
+			"\\n        graph"+
+			"\\n    "+
+			"\\n            stream<rstring key, uint64 dummy> Rows = Beacon() {"+
+			"\\n                param"+
+			"\\n                    period: 0.01;"+
+			"\\n                output"+
+			"\\n                    Rows : key = \\\"SAMPLE\\\"+(rstring) IterationCount();"+
+			"\\n            }"+
+			"\\n    "+
+			"\\n            () as Db2EventStoreSink = com.ibm.streamsx.eventstore::EventStoreSink(Rows) {"+
+			"\\n                param"+
+			"\\n                    batchSize: $batchSize;"+
+			"\\n                    connectionString: $connectionString;"+
+			"\\n                    databaseName: $databaseName;"+
+			"\\n                    primaryKey: 'key';"+
+			"\\n                    tableName: $tableName;"+
+			"\\n                    eventStoreUser: $eventStoreUser;"+
+			"\\n                    eventStorePassword: $eventStorePassword;"+
+			"\\n            }"+
+			"\\n    }"+	
+			"\\n"			
+			;	
+	
 }
 
