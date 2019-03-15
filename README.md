@@ -28,7 +28,7 @@
 
 This toolkit contains operators that enable you to connect IBM Streams to IBM Db2 Event Store.
 
-Currently, this toolkit contains one operator: a file sink operator called EventStoreSink for inserting IBM Streams tuples in to an IBM Db2 Event Store table.
+Currently, this toolkit contains one operator: An operator called EventStoreSink for inserting IBM Streams tuples in to an IBM Db2 Event Store table.
 
 To use this operator, you must have an existing IBM Db2 Event Store database, and the IBM Db2 Event Store cluster or server must be running. 
 
@@ -157,7 +157,7 @@ In these instructions, your virtual machine is the Streams QSE VM. These instruc
   
     For more information, see [Setting up the reference to the IBM Db2 Event Store daemon on your virtual machine](#setting-up-the-reference-to-the-ibm-db2-event-store-daemon-on-your-virtual-machine)
   
-    For more information on installing IBM Db2 Event Store, see <https://www.ibm.com/support/knowledgecenter/SSGNPV/eventstore/welcome.html>.
+    For more information on installing IBM Db2 Event Store, see <https://www.ibm.com/support/knowledgecenter/SSGNPV>.
 1. In the `com.ibm.streamsx.eventstore` directory, run `sbt toolkit` or `./recompile.sh`. 
 
 1. Create a new IBM Streams project. Add the location of the `com.ibm.streamsx.eventstore` directory as a toolkit location.
@@ -170,7 +170,7 @@ In these instructions, your virtual machine is the Streams QSE VM. These instruc
 ## Setting up IBM Db2 Event Store
 
 For more information on installing IBM Db2 Event Store, see:
-<https://www.ibm.com/support/knowledgecenter/SSGNPV/eventstore/welcome.html>
+<https://www.ibm.com/support/knowledgecenter/SSGNPV>
 
 On your IBM Streams system, either download the precomipled toolkit that corresponds to your IBM Db2 Event Store edition or you clone the <https://github.com/IBMStreams/streamsx.eventstore> repository.
 
