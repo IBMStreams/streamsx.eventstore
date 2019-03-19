@@ -101,6 +101,7 @@ public composite InsertSampleComp (output SampleResult) {
 				tableName: $tableName;
 				eventStoreUser: $eventStoreUser;
 				eventStorePassword: $eventStorePassword;
+				frontEndConnectionFlag: true;
 		}
 
 		stream<rstring result> SampleResult = Custom(InsertResults as I)  {

@@ -37,6 +37,7 @@ class TestDistributed(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.connection = os.environ['EVENTSTORE_CONNECTION']
+        self.database = os.environ['EVENTSTORE_DB']
 
     def setUp(self):
         Tester.setup_distributed(self)
@@ -94,7 +95,7 @@ class TestDistributed(unittest.TestCase):
         # final marker should flush the remaining tuples
         num_expected = 305
         batch_size = 50
-        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
 
     def test_insert_sample_batch_complete(self):
         print ('\n---------'+str(self))
@@ -103,7 +104,7 @@ class TestDistributed(unittest.TestCase):
         # final marker received after last async batch is triggered
         num_expected = 300
         batch_size = 50
-        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
 
 
     def test_insert_consistent_region(self):
@@ -124,7 +125,7 @@ class TestDistributed(unittest.TestCase):
         beacon.val = beacon.output(spltypes.rstring('CR_TEST'))
         beacon.stream.set_consistent(ConsistentRegionConfig.periodic(trigger_period))
         
-        es.insert(beacon.stream, self.connection, 'TESTDB', 'CRTable', primary_key='id')
+        es.insert(beacon.stream, self.connection, self.database, 'CRTable', primary_key='id', front_end_connection_flag=True)
         
         #self._build_only(name, topo)
 
