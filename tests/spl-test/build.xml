@@ -4,6 +4,7 @@
     <property name="streams.install" value="${env.STREAMS_INSTALL}" />
     <property name="spl-mt" value="${streams.install}/bin/spl-make-toolkit" />
     <property name="samples-dir" location="../../samples" />
+    <property name="compile-test-dir" location="compile.test" />
 
 
     <target name="indextoolkits">
@@ -16,6 +17,11 @@
 
     <target name="cleanTestProjects">
         <exec executable="make" failonerror="true" dir="${samples-dir}">
+            <arg value="-f" />
+            <arg value="Makefile" />
+            <arg value="clean" />
+        </exec>
+        <exec executable="make" failonerror="true" dir="${compile-test-dir}">
             <arg value="-f" />
             <arg value="Makefile" />
             <arg value="clean" />
