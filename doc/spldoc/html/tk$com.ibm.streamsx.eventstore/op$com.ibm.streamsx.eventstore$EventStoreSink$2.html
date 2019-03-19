@@ -7,65 +7,57 @@
 <meta name="copyright" content="(C) Copyright 2005"/>
 <meta name="DC.rights.owner" content="(C) Copyright 2005"/>
 <meta name="DC.Type" content="reference"/>
-<meta name="DC.Title" content="Example"/>
+<meta name="DC.Title" content="Behavior in a consistent region"/>
 <meta name="DC.Format" content="XHTML"/>
 <meta name="DC.Identifier" content="spldoc_page"/>
 <link rel="stylesheet" type="text/css" href="../../html/commonltr.css"/>
 <link rel="stylesheet" type="text/css" href="../../html/spldoc.css"/>
-<title>Example</title>
+<title>Behavior in a consistent region</title>
 </head>
 <body id="spldoc_page">
 
 
-<h1 class="title topictitle1">Example</h1>
+<h1 class="title topictitle1">Behavior in a consistent region</h1>
 
 <div class="body refbody">
 <div class="section">
 <p class="p">
-<a class="xref" href="../toolkits/toolkits.html">Toolkits</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 0.3.0</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; <a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink.html">EventStoreSink</a> &gt; Example</p>
+<a class="xref" href="../toolkits/toolkits.html">Toolkits</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 0.4.0</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; <a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink.html">EventStoreSink</a> &gt; Behavior in a consistent region</p>
 
 </div>
 
 
 <div class="section">
-<p class="p">SPL example demonstrates the usage of the EventStoreSink operator:
+<p class="p">The operator can participate in a consistent region. The operator can be part of a consistent region, but cannot be at the start of a consistent region.
 </p>
 
-<div class="p">
-<pre class="pre codeblock">
-composite Main {
-    param
-        expression&lt;rstring&gt; $connectionString: getSubmissionTimeValue("connectionString");
-        expression&lt;int32&gt;   $batchSize: (int32)getSubmissionTimeValue("batchSize", "1000");
-        expression&lt;rstring&gt; $databaseName: getSubmissionTimeValue("databaseName");
-        expression&lt;rstring&gt; $tableName: getSubmissionTimeValue("tableName");
-        expression&lt;rstring&gt; $eventStoreUser: getSubmissionTimeValue("eventStoreUser", "");
-        expression&lt;rstring&gt; $eventStorePassword: getSubmissionTimeValue("eventStorePassword", "");
+<p class="p">Consistent region supports that tuples are processed at least once.
+</p>
 
-    graph
-
-        stream&lt;rstring key, uint64 dummy&gt; Rows = Beacon() {
-            param
-                period: 0.01;
-            output
-                Rows : key = "SAMPLE"+(rstring) IterationCount();
-        }
-
-        () as Db2EventStoreSink = com.ibm.streamsx.eventstore::EventStoreSink(Rows) {
-            param
-                batchSize: $batchSize;
-                connectionString: $connectionString;
-                databaseName: $databaseName;
-                primaryKey: 'key';
-                tableName: $tableName;
-                eventStoreUser: $eventStoreUser;
-                eventStorePassword: $eventStorePassword;
-        }
-}
-</pre>
-
+<p class="p">Failures during tuple processing or drain are handled by the operator and consistent region support.
+</p>
 
 </div>
+
+<div class="section"><h2 class="title sectiontitle">Inserts
+</h2>
+
+<p class="p">Incoming tuples are processed in batches, where the queued tuples will be to send rows to IBM Db2 Event Store, when the configured size of the batch is reached.
+</p>
+
+<p class="p">On drain, the operator flushes its internal buffer and inserts the (remaining) queued tuples as batch into the database.
+</p>
+
+</div>
+
+<div class="section"><h2 class="title sectiontitle">Checkpoint and restore
+</h2>
+
+<p class="p">On checkpoint, the values of the metrics (<tt class="ph tt">nWriteSuccesses</tt> and <tt class="ph tt">nWriteFailures</tt>) are written to the checkpoint.
+</p>
+
+<p class="p">On reset, the internal buffer is cleared and metrics are restored with values that are read from checkpoint.
+</p>
 
 </div>
 

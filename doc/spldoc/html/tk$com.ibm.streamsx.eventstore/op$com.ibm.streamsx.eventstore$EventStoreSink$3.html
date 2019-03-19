@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="reference"/>
+<meta name="DC.Title" content="Example"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="spldoc_page"/>
+<link rel="stylesheet" type="text/css" href="../../html/commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../../html/spldoc.css"/>
+<title>Example</title>
+</head>
+<body id="spldoc_page">
+
+
+<h1 class="title topictitle1">Example</h1>
+
+<div class="body refbody">
+<div class="section">
+<p class="p">
+<a class="xref" href="../toolkits/toolkits.html">Toolkits</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 0.4.0</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; <a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink.html">EventStoreSink</a> &gt; Example</p>
+
+</div>
+
+
+<div class="section">
+<p class="p">SPL example demonstrates the usage of the EventStoreSink operator:
+</p>
+
+<div class="p">
+<pre class="pre codeblock">
+composite Main {
+    param
+        expression&lt;rstring&gt; $connectionString: getSubmissionTimeValue("connectionString");
+        expression&lt;int32&gt;   $batchSize: (int32)getSubmissionTimeValue("batchSize", "1000");
+        expression&lt;rstring&gt; $databaseName: getSubmissionTimeValue("databaseName");
+        expression&lt;rstring&gt; $tableName: getSubmissionTimeValue("tableName");
+        expression&lt;rstring&gt; $eventStoreUser: getSubmissionTimeValue("eventStoreUser", "");
+        expression&lt;rstring&gt; $eventStorePassword: getSubmissionTimeValue("eventStorePassword", "");
+
+    graph
+
+        stream&lt;rstring key, uint64 dummy&gt; Rows = Beacon() {
+            param
+                period: 0.01;
+            output
+                Rows : key = "SAMPLE"+(rstring) IterationCount();
+        }
+
+        () as Db2EventStoreSink = com.ibm.streamsx.eventstore::EventStoreSink(Rows) {
+            param
+                batchSize: $batchSize;
+                connectionString: $connectionString;
+                databaseName: $databaseName;
+                primaryKey: 'key';
+                tableName: $tableName;
+                eventStoreUser: $eventStoreUser;
+                eventStorePassword: $eventStorePassword;
+        }
+}
+</pre>
+
+
+</div>
+
+</div>
+
+</div>
+
+
+</body>
+</html>
