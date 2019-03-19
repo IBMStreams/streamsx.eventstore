@@ -1,0 +1,116 @@
+/*
+** Copyright (C) 2019  International Business Machines Corporation
+** All Rights Reserved
+*/
+namespace com.ibm.streamsx.eventstore.test;
+
+use com.ibm.streamsx.eventstore::*;
+
+
+public composite Test_checkpoint_operatorDriven {
+	param
+		expression<rstring> $connectionString: getSubmissionTimeValue("connectionString");
+		expression<rstring> $databaseName : getSubmissionTimeValue("databaseName", "TESTDB");
+		expression<rstring> $tableName : getSubmissionTimeValue("tableName", "TestTable");
+
+	graph
+		
+		stream<int32 a, int32 b> Beacon = spl.utility::Beacon() {
+			param
+				period: 0.1;
+			output
+				Beacon:
+					a=(int32)IterationCount(),
+					b=(int32)IterationCount();
+		}
+
+		stream<int32 a, int32 b, boolean _Inserted_> InsertResults = com.ibm.streamsx.eventstore::EventStoreSink(Beacon) {
+			param
+				connectionString: $connectionString;
+				databaseName: $databaseName;
+				primaryKey: 'a';
+				tableName: $tableName;
+			config
+				checkpoint : operatorDriven;
+		}
+
+		() as TestSink = Custom(InsertResults as I)  {
+			logic
+			onTuple I: {
+				println((rstring) I);
+			}
+		}
+}
+
+public composite Test_checkpoint_periodic {
+	param
+		expression<rstring> $connectionString: getSubmissionTimeValue("connectionString");
+		expression<rstring> $databaseName : getSubmissionTimeValue("databaseName", "TESTDB");
+		expression<rstring> $tableName : getSubmissionTimeValue("tableName", "TestTable");
+
+	graph
+		
+		stream<int32 a, int32 b> Beacon = spl.utility::Beacon() {
+			param
+				period: 0.1;
+			output
+				Beacon:
+					a=(int32)IterationCount(),
+					b=(int32)IterationCount();
+		}
+
+		stream<int32 a, int32 b, boolean _Inserted_> InsertResults = com.ibm.streamsx.eventstore::EventStoreSink(Beacon) {
+			param
+				connectionString: $connectionString;
+				databaseName: $databaseName;
+				primaryKey: 'a';
+				tableName: $tableName;
+			config
+				checkpoint : periodic(5.0);
+		}
+
+		() as TestSink = Custom(InsertResults as I)  {
+			logic
+			onTuple I: {
+				println((rstring) I);
+			}
+		}
+}
+
+
+public composite Test_consistent_region_unsupported_configuration {
+	param
+		expression<rstring> $connectionString: getSubmissionTimeValue("connectionString");
+		expression<rstring> $databaseName : getSubmissionTimeValue("databaseName", "TESTDB");
+		expression<rstring> $tableName : getSubmissionTimeValue("tableName", "TestTable");
+
+	graph
+
+		() as JCP = JobControlPlane() {}
+		
+		stream<int32 a, int32 b> Beacon = spl.utility::Beacon() {
+			param
+				period: 0.1;
+			output
+				Beacon:
+					a=(int32)IterationCount(),
+					b=(int32)IterationCount();
+		}
+
+		@consistent(trigger=periodic, period=5.0)
+		stream<int32 a, int32 b, boolean _Inserted_> InsertResults = com.ibm.streamsx.eventstore::EventStoreSink(Beacon) {
+			param
+				connectionString: $connectionString;
+				databaseName: $databaseName;
+				primaryKey: 'a';
+				tableName: $tableName;
+		}
+
+		() as TestSink = Custom(InsertResults as I)  {
+			logic
+			onTuple I: {
+				println((rstring) I);
+			}
+		}
+}
+

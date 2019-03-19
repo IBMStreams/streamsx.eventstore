@@ -41,6 +41,8 @@ import org.apache.spark.sql.Row;
 
 import com.ibm.streams.operator.AbstractOperator;
 import com.ibm.streams.operator.OperatorContext;
+import com.ibm.streams.operator.OperatorContext.ContextCheck;
+import com.ibm.streams.operator.compile.OperatorContextChecker;
 import com.ibm.streams.operator.StreamingData.Punctuation;
 import com.ibm.streams.operator.StreamingInput;
 import com.ibm.streams.operator.StreamingOutput;
@@ -58,6 +60,7 @@ import com.ibm.streams.operator.model.PrimitiveOperator;
 import com.ibm.streams.operator.model.CustomMetric;
 import com.ibm.streams.operator.metrics.*;
 import com.ibm.streams.operator.state.Checkpoint;
+import com.ibm.streams.operator.state.CheckpointContext;
 import com.ibm.streams.operator.state.ConsistentRegionContext;
 import com.ibm.streams.operator.state.StateHandler;
 import com.ibm.streams.operator.log4j.TraceLevel;
@@ -96,6 +99,7 @@ import java.io.StringWriter;
 @PrimitiveOperator(name="EventStoreSink", namespace="com.ibm.streamsx.eventstore", description=
 EventStoreSink.operatorDescription +
 EventStoreSink.DATA_TYPES + 
+EventStoreSink.CR_DESC +
 EventStoreSink.SPL_EXAMPLES_DESC
 )
 @InputPorts({@InputPortSet(
@@ -205,44 +209,71 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         this.numBatchesPerInsert = numBatchesPerInsert;
     }
     
+	@ContextCheck(compile = true)
+	public static void checkCheckpointConfig(OperatorContextChecker checker) {
+		OperatorContext opContext = checker.getOperatorContext();		
+		CheckpointContext chkptContext = opContext.getOptionalContext(CheckpointContext.class);
+		if (chkptContext != null) {
+			if (chkptContext.getKind().equals(CheckpointContext.Kind.OPERATOR_DRIVEN)) {
+				checker.setInvalidContext("The following operator does not support 'operatorDriven' checkpoint configuration: EventStoreSink", null);
+			}
+			if (chkptContext.getKind().equals(CheckpointContext.Kind.PERIODIC)) {
+				checker.setInvalidContext("The following operator does not support 'periodic' checkpoint configuration: EventStoreSink", null);
+			}			
+		}
+	}
+	
+	@ContextCheck(compile = true)
+	public static void checkConsistentRegion(OperatorContextChecker checker) {
+		
+		// check that the object store sink is not at the start of the consistent region
+		OperatorContext opContext = checker.getOperatorContext();
+		ConsistentRegionContext crContext = opContext.getOptionalContext(ConsistentRegionContext.class);
+		if (crContext != null) {
+			if (crContext.isStartOfRegion()) {
+				checker.setInvalidContext("The following operator cannot be the start of a consistent region when an input port is present: EventStoreSink", null); 
+			}
+		}
+	}    
+    
     /* InsertRunnable is the process that obtains a batch from a queue and processes it by sending to IBM Db2 Event Store.
      * It should be noted that this will execute asynchronously with the process that receives rows from the input.
      */
     private class InsertRunnable implements Runnable {
-        @Override
-	public void run(){
-			long threadId = Thread.currentThread().getId();
-                        while(!shutdown ) {
-                            try {
-                                // Takea batch from the queue and process it
-                                LinkedList</*Row*/Tuple> asyncBatch = batchQueue.take();
-                                if( asyncBatch == null ){
-                                    continue;
-                                }
-                                if (tracer.isDebugEnabled()) {
-                                	tracer.log(TraceLevel.DEBUG, "Found a non-empty batch so call insert from submitbatch: thread " + threadId);
-                                }
-                                // Process the batch with sending it to IBM Db2 Event Store
-                                boolean addLeftovers = processBatch(asyncBatch);
+    	@Override
+        public void run(){
+        	long threadId = Thread.currentThread().getId();
+			while(!shutdown ) {
+				try {
+					// Take batch from the queue and process it
+					LinkedList</*Row*/Tuple> asyncBatch = batchQueue.take();
+					if( asyncBatch == null ){
+						continue;
+					}
+					if (tracer.isDebugEnabled()) {
+						tracer.log(TraceLevel.DEBUG, "Found a non-empty batch so call insert from InsertRunnable: thread " + threadId);
+					}
+					// Process the batch with sending it to IBM Db2 Event Store
+					boolean addLeftovers = processBatch(asyncBatch);
 
-                                if (tracer.isDebugEnabled()) {
-                                	tracer.log(TraceLevel.DEBUG, "In submitBatch call after processbatch with addLeftovers = " + addLeftovers + " with thread " + threadId);
-                                }
-                            } catch (Exception e) {
-                                tracer.log(TraceLevel.ERROR, "Found exception in InsertRunnable thread " + threadId + " message:" + e.getMessage() );
-                                throw new RuntimeException(e);
-	    		    } finally {
-                		if(crContext != null) {
-		   		    // if internal buffer has been cleared, notify waiting thread.
-		   		    if(batchQueue.peek() == null) {
-				        synchronized(drainLock) {
-			    	    	    drainLock.notifyAll();
-				        }
-		   		    }
-	        		}
-	    		    }
-                        }
-	}
+					if (tracer.isDebugEnabled()) {
+						tracer.log(TraceLevel.DEBUG, "In InsertRunnable call after processbatch with addLeftovers = " + addLeftovers + " with thread " + threadId);
+					}
+				} catch (Exception e) {
+					tracer.log(TraceLevel.ERROR, "Found exception in InsertRunnable thread " + threadId + " message:" + e.getMessage() );
+					throw new RuntimeException(e);
+				} finally {
+					if(inConsistentRegion()) {
+						// if internal buffer has been cleared, notify waiting thread.
+						if(batchQueue.peek() == null) {
+							synchronized(drainLock) {
+								drainLock.notifyAll();
+							}
+						}
+					}
+				}
+			}
+    	}
     }
 
     /**
@@ -285,16 +316,14 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     @Override
     public void drain() throws Exception {
         if (tracer.isDebugEnabled()) {
-        	tracer.log(TraceLevel.DEBUG, "DRAIN called for the IBM Db2 Event Store sink operator");
+            tracer.log(TraceLevel.DEBUG, "DRAIN called for the IBM Db2 Event Store sink operator");
         }
 
-        synchronized(this) {
-            if( batch != null && !batch.isEmpty() ){
-                LinkedList</*Row*/Tuple> asyncBatch = null;
-                asyncBatch = batch;
-                batch = newBatch();
-                batchQueue.put(asyncBatch);
-            }
+        if( batch != null && !batch.isEmpty() ){
+            LinkedList</*Row*/Tuple> asyncBatch = null;
+            asyncBatch = batch;
+            batch = newBatch();
+            batchQueue.put(asyncBatch);
         }
 
         if(batchQueue.peek() != null) {
@@ -319,12 +348,19 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     	}
 
         long failCount = checkpoint.getInputStream().readLong();
-        long sucessCount = checkpoint.getInputStream().readLong();
+        long successCount = checkpoint.getInputStream().readLong();
     	if (tracer.isDebugEnabled()) {
-    		tracer.log(TraceLevel.DEBUG, "RESET failcount = " + failCount + " success count = " + sucessCount);
+    		tracer.log(TraceLevel.DEBUG, "RESET failcount = " + failCount + " success count = " + successCount);
     	}
-        impl = null; // unset the connection information to Event Store
-        startOperatorSetup(getOperatorContext(), failCount, sucessCount);
+        if( failCount > 0 ){
+            getWriteFailuresMetric().setValue(failCount);
+        }
+        if( successCount > 0 ){
+            getWriteSuccessesMetric().setValue(successCount);
+        }
+        batch.clear();
+        batch = null;
+        batch = newBatch();
         if (tracer.isDebugEnabled()) {
     		tracer.log(TraceLevel.DEBUG, "RESET completed");
     	}
@@ -335,9 +371,11 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         if (tracer.isDebugEnabled()) {
     		tracer.log(TraceLevel.DEBUG, "RESETToINITIALSTATE called for the IBM Db2 Event Store sink operator");
     	}
-        // Initialize the operator information from scratch
-        impl = null; // unset the connection information to Event Store
-        startOperatorSetup(getOperatorContext(), 0L, 0L);
+        getWriteFailuresMetric().setValue(0L);
+        getWriteSuccessesMetric().setValue(0L);
+        batch.clear();
+        batch = null;
+        batch = newBatch();
         if (tracer.isDebugEnabled()) {
     		tracer.log(TraceLevel.DEBUG, "RESETToINITIALSTATE completed");
     	}
@@ -352,9 +390,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     private boolean inConsistentRegion() {
         // check if this operator is within a consistent region
-        ConsistentRegionContext cContext = getOperatorContext().getOptionalContext(ConsistentRegionContext.class);
-
-        if(cContext != null) {
+        if(crContext != null) {
             return true;
         } else {
             return false;
@@ -489,7 +525,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     @Override
     public /*synchronized*/ void process(StreamingInput<Tuple> stream, Tuple tuple)
             throws Exception {
-
         LinkedList</*Row*/Tuple> asyncBatch;
 
         synchronized (this) {
@@ -995,8 +1030,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
               getWriteSuccessesMetric().increment();
               getInsertGaugeTimeMetric().setValue(endTime);
               submitResultTuple(batch, true);
-              getActiveInsertsMetric().incrementValue(-1);
               batch.clear();
+              getActiveInsertsMetric().incrementValue(-1);
           } catch(Exception e) {
               endTime = System.currentTimeMillis() - startTime;
               if (tracer.isDebugEnabled()) {
@@ -1006,7 +1041,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
               tracer.log(TraceLevel.ERROR, "Failed to write tuple to EventStore.\n"+ stringifyStackTrace(e) );
               submitResultTuple(batch, false);
               getActiveInsertsMetric().incrementValue(-1);
-              if(crContext != null) {
+              if (inConsistentRegion()) {
             	  // In a consitent region just throw the error so we can restart gracefully
                   tracer.log(TraceLevel.ERROR, "Failed to write tuple to EventStore so now THROW exception in processBatch");
                   throw e;
@@ -1185,5 +1220,20 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 			"\\n"			
 			;	
 	
+	public static final String CR_DESC =
+			"\\n"+
+			"\\n+ Behavior in a consistent region\\n"+
+			"\\n"+
+			"\\nThe operator can participate in a consistent region. " +
+			"The operator can be part of a consistent region, but cannot be at the start of a consistent region.\\n" +
+			"\\nConsistent region supports that tuples are processed at least once.\\n" +
+			"\\nFailures during tuple processing or drain are handled by the operator and consistent region support.\\n" +
+			"\\n# Inserts\\n"+
+			"\\nIncoming tuples are processed in batches, where the queued tuples will be to send rows to IBM Db2 Event Store, when the configured size of the batch is reached.\\n"+
+			"\\nOn drain, the operator flushes its internal buffer and inserts the (remaining) queued tuples as batch into the database.\\n" +
+			"\\n# Checkpoint and restore\\n"+
+			"\\nOn checkpoint, the values of the metrics (`nWriteSuccesses` and `nWriteFailures`) are written to the checkpoint.\\n" + 
+			"\\nOn reset, the internal buffer is cleared and metrics are restored with values that are read from checkpoint.\\n"
+			;	
 }
 
