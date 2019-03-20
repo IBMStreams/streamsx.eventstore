@@ -32,7 +32,12 @@ class TestDistributed(unittest.TestCase):
         if os.environ.get('STREAMSX_EVENTSTORE_TOOLKIT') is None:
             self.eventstore_toolkit_location = '../../com.ibm.streamsx.eventstore'
         else:
-            self.eventstore_toolkit_location = os.environ.get('STREAMSX_EVENTSTORE_TOOLKIT')        
+            self.eventstore_toolkit_location = os.environ.get('STREAMSX_EVENTSTORE_TOOLKIT')
+        # location of the samples      
+        if os.environ.get('STREAMSX_EVENTSTORE_SAMPLES') is None:
+            self.samples_location = '../../samples/EventStoreInsertSample'
+        else:
+            self.samples_location = os.environ.get('STREAMSX_EVENTSTORE_SAMPLES')
 
     @classmethod
     def setUpClass(self):
@@ -84,27 +89,34 @@ class TestDistributed(unittest.TestCase):
 
     def _index_tk(self, tkdir):
         si = os.environ['STREAMS_INSTALL']
-        this_dir = os.path.dirname(os.path.realpath(__file__))
-        tkl = this_dir+'/'+tkdir
+        if os.path.isabs(tkdir) is False:
+            this_dir = os.path.dirname(os.path.realpath(__file__))
+            tkl = this_dir+'/'+tkdir
         ri = subprocess.call([os.path.join(si, 'bin', 'spl-make-toolkit'), '-i', tkl])
+
 
     def test_insert_sample_flush_remaining_tuples(self):
         print ('\n---------'+str(self))
         name = 'test_insert_sample_flush_remaining_tuples'
+        if (streams_install_env_var()):
+            self._index_tk(self.samples_location)
         # test the sample application
         # final marker should flush the remaining tuples
         num_expected = 305
         batch_size = 50
-        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample1', 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
+
 
     def test_insert_sample_batch_complete(self):
         print ('\n---------'+str(self))
         name = 'test_insert_sample_batch_complete'
+        if (streams_install_env_var()):
+            self._index_tk(self.samples_location)
         # test the sample application
         # final marker received after last async batch is triggered
         num_expected = 300
         batch_size = 50
-        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
 
 
     def test_insert_consistent_region(self):
@@ -125,7 +137,7 @@ class TestDistributed(unittest.TestCase):
         beacon.val = beacon.output(spltypes.rstring('CR_TEST'))
         beacon.stream.set_consistent(ConsistentRegionConfig.periodic(trigger_period))
         
-        es.insert(beacon.stream, self.connection, self.database, 'CRTable', primary_key='id', front_end_connection_flag=True)
+        es.insert(beacon.stream, self.connection, self.database, 'StreamsCRTable', primary_key='id', front_end_connection_flag=True)
         
         #self._build_only(name, topo)
 
@@ -146,6 +158,7 @@ class TestDistributed(unittest.TestCase):
         tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
         print (str(tester.result))
 
+
     @unittest.skipIf(streams_install_env_var() == False, "Missing STREAMS_INSTALL environment variable.")
     def test_compile_time_error_checkpoint_periodic(self):
         print ('\n---------'+str(self))
@@ -158,6 +171,7 @@ class TestDistributed(unittest.TestCase):
             #expect compile error
             self.assertEqual(1, rc['return_code'])
 
+
     @unittest.skipIf(streams_install_env_var() == False, "Missing STREAMS_INSTALL environment variable.")
     def test_compile_time_error_checkpoint_operator_driven(self):
         print ('\n---------'+str(self))
@@ -169,6 +183,7 @@ class TestDistributed(unittest.TestCase):
             rc = streamsx.topology.context.submit('BUNDLE', r[0])
             #expect compile error
             self.assertEqual(1, rc['return_code'])
+
 
     @unittest.skipIf(streams_install_env_var() == False, "Missing STREAMS_INSTALL environment variable.")
     def test_compile_time_error_consistent_region_unsupported_configuration(self):
