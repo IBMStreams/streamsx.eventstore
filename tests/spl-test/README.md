@@ -11,6 +11,16 @@ Install the latest streamsx package with pip, a package manager for Python, by e
 
     export EVENTSTORE_CONNECTION=<HOST>:1100
 
+### Configure the name of the Event Store database, for example
+
+    export EVENTSTORE_DB=TESTDB
+
+### Optionally configure the location of the Event Store toolkit, for example
+
+    export STREAMSX_EVENTSTORE_TOOLKIT=<toolkit_location>
+
+If `STREAMSX_EVENTSTORE_TOOLKIT` is not set, then the toolkit in the repository is used.
+
 # Run the tests with local Streams instance
 ```
 ant test
