@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Map;
@@ -148,16 +149,17 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     /* Metrics include the count of the number of batches that failed to be processed by IBM Db2 Event Store
      *  (nWriteFailures), the number of successful batches sent and processed by Event Store (nWriteSuccesses), 
-     *  the time spent by Event Store to process a batch (insertGaugeTime), and at any given batch processing
+     *  the time spent by Event Store to process a batch, and at any given batch processing
      *  time there is a count of the number of batches processed together (numBatchesPerInsert).
      */
     Metric nWriteFailures = null;
     Metric nWriteSuccesses = null;
-    Metric insertGaugeTime = null;
     Metric numBatchesPerInsert = null;
     Metric nActiveInserts = null;
+	Metric lowestInsertTime;
+	Metric highestInsertTime;
+	Metric averageInsertTime;
 
-    /* end_generated_IBM_copyright_code */
 
     /**
      * A batch of tuples stored together before they are processed and received from the input
@@ -183,6 +185,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private Object drainLock = new Object();
     public static final long CONSISTENT_REGION_DRAIN_WAIT_TIME = 180000;
     
+    private boolean isInsertSpeedMetricSet = false;
+    ArrayList<Long> insertTimes = new ArrayList<Long>();
+    
 	// Initialize the metrics
     @CustomMetric (kind = Metric.Kind.COUNTER, name = "nActiveInserts", description = "Number of active insert requests")
     public void setnActiveInserts (Metric nActiveInserts) {
@@ -198,16 +203,26 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     public void setnWriteSuccesses (Metric nWriteSuccesses) {
         this.nWriteSuccesses = nWriteSuccesses;
     }
-
-    @CustomMetric (kind = Metric.Kind.GAUGE, name = "PerInsertTime", description = "Time it takes to perform a successful batch insert")
-    public void setPerInsertTime (Metric insertGaugeTime) {
-        this.insertGaugeTime = insertGaugeTime;
-    }
-    
+   
     @CustomMetric (kind = Metric.Kind.GAUGE, name = "NumBatchesPerInsert", description = "Number of batches inserted together")
     public void setnumBatchesPerInsert (Metric numBatchesPerInsert) {
         this.numBatchesPerInsert = numBatchesPerInsert;
     }
+    
+	@CustomMetric (kind = Metric.Kind.TIME, name = "insertTimeMin", description = "Minimal duration to perform a successful batch insert.")
+    public void setlowestInsertTime (Metric lowestInsertTime) {
+		this.lowestInsertTime = lowestInsertTime;
+	}
+
+    @CustomMetric (kind = Metric.Kind.TIME, name = "insertTimeMax", description = "Maximal duration to perform a successful batch insert.")
+    public void sethighestInsertTime (Metric highestInsertTime) {
+        this.highestInsertTime = highestInsertTime;
+    }    
+
+    @CustomMetric (kind = Metric.Kind.TIME, name = "insertTimeAvg", description = "Average time to perform a successful batch insert.")
+    public void setaverageInsertTime (Metric averageInsertTime) {
+        this.averageInsertTime = averageInsertTime;
+    }    
     
 	@ContextCheck(compile = true)
 	public static void checkCheckpointConfig(OperatorContextChecker checker) {
@@ -306,8 +321,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         // Write out a checkpoint state and not the order of writes must be adhere to in reset for order of reads
         checkpoint.getOutputStream().writeLong(getWriteFailuresMetric().getValue());
         checkpoint.getOutputStream().writeLong(getWriteSuccessesMetric().getValue());
-        //checkpoint.getOutputStream().writeLong(insertGaugeTime.getValue()); does not need to be save as its a single value in time
-        //checkpoint.getOutputStream().writeLong(numBatchesPerInsert.getValue()); does not need to be save as its a single value in time
         if (tracer.isDebugEnabled()) {
         	tracer.log(TraceLevel.DEBUG, "CHECKPOINT completed with failcount = " + getWriteFailuresMetric().getValue() + " success count = " + getWriteSuccessesMetric().getValue());
         }
@@ -981,6 +994,36 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     	}  
     }
     
+	public void updateInsertSpeedMetrics (long insertDuration) {
+		if (false == isInsertSpeedMetricSet) {
+			// set initial values after first upload
+			this.lowestInsertTime.setValue(insertDuration);
+			this.highestInsertTime.setValue(insertDuration);
+			this.averageInsertTime.setValue(insertDuration);
+			isInsertSpeedMetricSet = true;
+		}
+		else {
+			// metrics for insert duration (time to insert a batch)
+			if (insertDuration < this.lowestInsertTime.getValue()) {
+				this.lowestInsertTime.setValue(insertDuration);
+			}
+			if (insertDuration > this.highestInsertTime.getValue()) {
+				this.highestInsertTime.setValue(insertDuration);
+			}
+			insertTimes.add(insertDuration);
+			// calculate average
+			long total = 0;
+			for(int i = 0; i < insertTimes.size(); i++) {
+			    total += insertTimes.get(i);
+			}
+			this.averageInsertTime.setValue(total / insertTimes.size());
+			// avoid that arrayList is growing unlimited
+			if (insertTimes.size() > 10000) {
+				insertTimes.remove(0);
+			}
+		}
+	}   
+    
     /**
      * Process a batch of tuples.
      * 
@@ -1028,7 +1071,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
           		tracer.log(TraceLevel.DEBUG, "*** SUCCESSFUL INSERT");
               }
               getWriteSuccessesMetric().increment();
-              getInsertGaugeTimeMetric().setValue(endTime);
+              // update time metrics
+              updateInsertSpeedMetrics(endTime);
+              // submit result tuple if output port is present
               submitResultTuple(batch, true);
               batch.clear();
               getActiveInsertsMetric().incrementValue(-1);
@@ -1039,6 +1084,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
               }
               getWriteFailuresMetric().increment();
               tracer.log(TraceLevel.ERROR, "Failed to write tuple to EventStore.\n"+ stringifyStackTrace(e) );
+              // submit result tuple if output port is present
               submitResultTuple(batch, false);
               getActiveInsertsMetric().incrementValue(-1);
               if (inConsistentRegion()) {
@@ -1095,9 +1141,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 		return nWriteSuccesses;
 	}
 	
-	public Metric getInsertGaugeTimeMetric() {
-		return insertGaugeTime;
-	}
 	// operator and port documentation -------------------------------------------------------------------------------------------------------
 
 	static final String operatorDescription = 
