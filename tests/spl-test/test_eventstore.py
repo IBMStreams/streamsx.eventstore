@@ -68,9 +68,7 @@ class TestDistributed(unittest.TestCase):
         tester.tuple_count(test_op.stream, num_tuples, exact=exact)
 
         cfg = {}
-        if ("TestICP" in str(self)):
-            cfg = self._service()
-
+ 
         # change trace level
         job_config = streamsx.topology.context.JobConfig(tracing='info')
         job_config.add(cfg)
@@ -147,8 +145,6 @@ class TestDistributed(unittest.TestCase):
         tester.resets(num_resets) # minimum number of resets for each region
 
         cfg = {}
-        if ("TestICP" in str(self)):
-            cfg = self._service()
 
         # change trace level
         job_config = streamsx.topology.context.JobConfig(tracing='warn')
@@ -217,28 +213,6 @@ class TestICP(TestDistributed):
         Tester.setup_distributed(self)
         self._use_local_toolkit()       
 
-    def _service (self, force_remote_build = True):
-        auth_host = os.environ['AUTH_HOST']
-        auth_user = os.environ['AUTH_USERNAME']
-        auth_password = os.environ['AUTH_PASSWORD']
-        streams_rest_url = os.environ['STREAMS_REST_URL']
-        streams_service_name = os.environ['STREAMS_SERVICE_NAME']
-        streams_build_service_port = os.environ['STREAMS_BUILD_SERVICE_PORT']
-        uri_parsed = urlparse (streams_rest_url)
-        streams_build_service = uri_parsed.hostname + ':' + streams_build_service_port
-        streams_rest_service = uri_parsed.netloc
-        r = requests.get ('https://' + auth_host + '/v1/preauth/validateAuth', auth=(auth_user, auth_password), verify=False)
-        token = r.json()['accessToken']
-        cfg = {
-            'type': 'streams',
-            'connection_info': {
-                'serviceBuildEndpoint': 'https://' + streams_build_service,
-                'serviceRestEndpoint': 'https://' + streams_rest_service + '/streams/rest/instances/' + streams_service_name
-            },
-            'service_token': token
-        }
-        cfg [streamsx.topology.context.ConfigParams.FORCE_REMOTE_BUILD] = force_remote_build
-        return cfg
 
 
 class TestICPRemote(TestICP):
