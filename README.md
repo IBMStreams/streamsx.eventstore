@@ -207,6 +207,8 @@ You can define the following parameters for the Event Store:
 
 - **tableName** - (required) The name of the table into which you want to insert data from the IBM Streams application. If the table does not exist, the table is automatically created in IBM Db2 Event Store.
 
+- **schemaName** - (optional) The name of the table schema name into which you want to insert and will default to the user ID as the schema name.
+
 - **eventStoreUser** - The user ID to use to conect to IBM DB2 Event Store. If you don't specify the **eventStoreUser** parameter, the `admin` user is used. 
 
 - **eventStorePassword** - The password to use to connect to IBM Db2 Event Store. If you do not specify the **eventStoreUser** paramater, a default is used. 

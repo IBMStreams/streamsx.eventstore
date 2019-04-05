@@ -129,6 +129,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     String databaseName = null;
     String tableName = null;
+    String schemaName = null;
     String connectionString = null;
     boolean frontEndConnectionFlag = false;
     String eventStoreUser = null;
@@ -475,7 +476,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                 if( databaseName == null || databaseName == "" ||
                         tableName == null || tableName == "" ){
                 	tracer.log(TraceLevel.ERROR, "No database or table name was given so we cannot carry out the insert");
-                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName,
+                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
                             partitioningKey, primaryKey);
@@ -485,7 +486,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                 		tracer.log(TraceLevel.INFO, "databaseName= " + databaseName +
                             " tabename= " + tableName );
                 	}
-                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName,
+                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
                             partitioningKey, primaryKey);
@@ -764,6 +765,10 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     @Parameter(name="tableName", description = "The name of the table into which you want to insert data from the IBM Streams application. If the table does not exist, the table is automatically created in IBM Db2 Event Store.")
     public void setTableName(String s) {tableName = s;}
+
+    @Parameter(name="schemaName",  optional=true,
+               description = "The name of the table schema name of the table into which to insert data. If not used the default will be the user id.")
+    public void setSchemaName(String s) {schemaName = s;}
 
     private String stringifyStackTrace(Exception e) {
         StringWriter sw = new StringWriter();
