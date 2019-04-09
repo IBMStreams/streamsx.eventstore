@@ -2,7 +2,7 @@ import scala.language.postfixOps // <- making IntelliJ hush about the ! bash com
 
 name := "streamsx.eventstore"
 organization := "com.ibm"
-version := "1.3.0-RELEASE"
+version := "2.0-RELEASE"//"1.3.0-RELEASE"
 scalaVersion := "2.11.8"
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 compileOrder in Compile := CompileOrder.ScalaThenJava
@@ -30,9 +30,9 @@ libraryDependencies ++= Seq(
   //"com.ibm.event" % "ibm-db2-eventstore-client" % "1.1.3", // For IBM Db2 Event Store Enterprise edition v1.1.3
   //"com.ibm.event" % "ibm-event-desktop" % "1.1.1", // For IBM Db2 Event Store Developer edition v1.1.1
   //"com.ibm.event" % "ibm-db2-eventstore-desktop-client" % "1.1.2", // For IBM Db2 Event Store Developer edition v1.1.2
-  "com.ibm.event" % "ibm-db2-eventstore-desktop-client" % "1.1.4", // For IBM Db2 Event Store Developer edition v1.1.4
+  //"com.ibm.event" % "ibm-db2-eventstore-desktop-client" % "1.1.4", // For IBM Db2 Event Store Developer edition v1.1.4
 
-  "com.google.protobuf" % "protobuf-java" % "2.5.0",
+  //"com.google.protobuf" % "protobuf-java" % "2.5.0",
   "org.apache.spark" %% "spark-core" % sparkver intransitive(), 
 
   "org.apache.spark" %% "spark-unsafe" % sparkver intransitive(), 
@@ -44,34 +44,35 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-streaming" % sparkver % "provided",
 
   "org.apache.spark" %% "spark-hive" % sparkver % "provided",
-  "org.apache.hadoop" % "hadoop-core" % "0.20.2" intransitive(),
-  "com.esotericsoftware.kryo" % "kryo" % "2.16",
-  "org.apache.commons" % "commons-lang3" % "3.3.2",
+  //"org.apache.hadoop" % "hadoop-core" % "0.20.2" intransitive(),
+  //"com.esotericsoftware.kryo" % "kryo" % "2.16",
+  //"org.apache.commons" % "commons-lang3" % "3.3.2",
   "org.json4s" % "json4s-ast_2.11" % "3.2.10",
   "org.json4s" %% "json4s-jackson" % "3.2.11",
 
   "org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkver % "provided",
 
-  "org.apache.curator" % "curator-client" % curatorVersion % "provided",
-  "org.apache.curator" % "curator-recipes" % curatorVersion, // % "provided",
+  //"org.apache.curator" % "curator-client" % curatorVersion % "provided",
+  //"org.apache.curator" % "curator-recipes" % curatorVersion, // % "provided",
 
   "io.netty" % "netty-all" % "4.0.29.Final",
 
-  "org.slf4j"                   % "slf4j-log4j12"              % slf4jVersion, // % "provided",
+  //"org.slf4j"                   % "slf4j-log4j12"              % slf4jVersion, // % "provided",
+  "org.slf4j"                    % "slf4j-jdk14"                % slf4jVersion,// % "test", //Test,
 
-  "io.circe"                    %% "circe-core"            % circeVersion, //  % "provided",
-  "io.circe"                    %% "circe-generic"         % circeVersion, // % "provided",
-  "io.circe"                    %% "circe-jawn"            % circeVersion, // % "provided",
-  "org.apache.curator"           % "curator-framework"     % curatorVersion,// % "provided",
+  //"io.circe"                    %% "circe-core"            % circeVersion, //  % "provided",
+  //"io.circe"                    %% "circe-generic"         % circeVersion, // % "provided",
+  //"io.circe"                    %% "circe-jawn"            % circeVersion, // % "provided",
+  //"org.apache.curator"           % "curator-framework"     % curatorVersion,// % "provided",
   "org.scalaz"                  %% "scalaz-core"           % scalazVersion, // % "provided",
-  "org.apache.logging.log4j"    % "log4j-api"              % log4jVersion, // % "provided",
+  //"org.apache.logging.log4j"    % "log4j-api"              % log4jVersion, // % "provided",
   "org.slf4j"                   % "slf4j-api"              % slf4jVersion, // % "provided",
-  "joda-time"                   % "joda-time"              % jodaTimeVersion, // % "provided",
+  //"joda-time"                   % "joda-time"              % jodaTimeVersion, // % "provided",
   "junit"                       % "junit"                  % junitVersion            % "test",
   "org.scalacheck"              %% "scalacheck"            % scalacheckVersion       % "test",
   "org.scalatest"               %% "scalatest"             % scalatestVersion        % "test",
-  "org.slf4j"                   % "slf4j-simple"           % slf4jVersion            % "test",
-  "org.apache.curator"          % "curator-test"           % curatorVersion          % "test"
+  "org.slf4j"                   % "slf4j-simple"           % slf4jVersion            % "test"//,
+  //"org.apache.curator"          % "curator-test"           % curatorVersion          % "test"
 )
 
 val jarFn = "streamsx.eventstore.jar"
