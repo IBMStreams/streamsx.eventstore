@@ -43,6 +43,14 @@ class TestDistributed(unittest.TestCase):
     def setUpClass(self):
         self.connection = os.environ['EVENTSTORE_CONNECTION']
         self.database = os.environ['EVENTSTORE_DB']
+        if os.environ.get('EVENTSTORE_USER') is not None:
+            self.es_user = os.environ['EVENTSTORE_USER']
+        else:
+            self.es_user = None
+        if os.environ.get('EVENTSTORE_PASSWORD') is not None:
+            self.es_password = os.environ['EVENTSTORE_PASSWORD']
+        else:
+            self.es_password = None
 
     def setUp(self):
         Tester.setup_distributed(self)
@@ -64,7 +72,7 @@ class TestDistributed(unittest.TestCase):
         test_op = op.Source(topo, composite_name, 'tuple<rstring result>', params=params)
 
         tester = Tester(topo)
-        #tester.run_for(60)
+        tester.run_for(600)
         tester.tuple_count(test_op.stream, num_tuples, exact=exact)
 
         cfg = {}
@@ -101,10 +109,14 @@ class TestDistributed(unittest.TestCase):
             self._index_tk(self.samples_location)
         # test the sample application
         # final marker should flush the remaining tuples
-        num_expected = 305
+        num_expected = 105
         batch_size = 50
-        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample1', 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
+        if self.es_password and self.es_user is not None:
+            params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'eventStoreUser': self.es_user , 'eventStorePassword': self.es_password, 'batchSize':batch_size, 'iterations': num_expected}
+        else:
+            params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'iterations': num_expected}
 
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", params, '../../samples/EventStoreInsertSample', num_expected, True)
 
     def test_insert_sample_batch_complete(self):
         print ('\n---------'+str(self))
@@ -113,9 +125,14 @@ class TestDistributed(unittest.TestCase):
             self._index_tk(self.samples_location)
         # test the sample application
         # final marker received after last async batch is triggered
-        num_expected = 300
+        num_expected = 100
         batch_size = 50
-        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
+        if self.es_password and self.es_user is not None:
+            params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'eventStoreUser': self.es_user , 'eventStorePassword': self.es_password, 'batchSize':batch_size, 'iterations': num_expected}
+        else:
+            params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'iterations': num_expected}
+
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", params, '../../samples/EventStoreInsertSample', num_expected, True)
 
 
     def test_insert_consistent_region(self):

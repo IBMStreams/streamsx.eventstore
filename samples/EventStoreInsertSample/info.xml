@@ -3,13 +3,13 @@
   <info:identity>
     <info:name>com.ibm.streamsx.eventstore.sample.InsertSample</info:name>
     <info:description>This sample application demonstrate how to use the EventStoreSink operator with optional output port for the results.</info:description>
-    <info:version>1.1.0</info:version>
-    <info:requiredProductVersion>4.2.0.0</info:requiredProductVersion>
+    <info:version>1.2.0</info:version>
+    <info:requiredProductVersion>4.3.0.0</info:requiredProductVersion>
   </info:identity>
   <info:dependencies>
     <info:toolkit>
       <common:name>com.ibm.streamsx.eventstore</common:name>
-      <common:version>[0.1.0,2.0.0)</common:version>
+      <common:version>[2.0.0,3.0.0)</common:version>
     </info:toolkit>
   </info:dependencies>
 </info:toolkitInfoModel>
