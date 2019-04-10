@@ -768,7 +768,11 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     @Parameter(name="schemaName",  optional=true,
                description = "The name of the table schema name of the table into which to insert data. If not used the default will be the user id.")
-    public void setSchemaName(String s) {schemaName = s;}
+    public void setSchemaName(String s) {
+    	if (!("".equals(s))) {
+    		schemaName = s;
+    	}
+    }
 
     private String stringifyStackTrace(Exception e) {
         StringWriter sw = new StringWriter();
