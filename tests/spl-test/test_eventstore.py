@@ -72,7 +72,7 @@ class TestDistributed(unittest.TestCase):
         test_op = op.Source(topo, composite_name, 'tuple<rstring result>', params=params)
 
         tester = Tester(topo)
-        tester.run_for(600)
+        tester.run_for(400)
         tester.tuple_count(test_op.stream, num_tuples, exact=exact)
 
         cfg = {}

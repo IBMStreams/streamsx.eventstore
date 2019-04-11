@@ -65,6 +65,7 @@ import com.ibm.streams.operator.state.CheckpointContext;
 import com.ibm.streams.operator.state.ConsistentRegionContext;
 import com.ibm.streams.operator.state.StateHandler;
 import com.ibm.streams.operator.log4j.TraceLevel;
+import com.ibm.streams.operator.model.Libraries;
 
 import com.ibm.streamsx.eventstore.EventStoreSinkImpl;
 //import com.ibm.streamsx.eventstore.EventStoreSinkJImplObject;
@@ -114,7 +115,7 @@ EventStoreSink.SPL_EXAMPLES_DESC
 @OutputPorts({
     @OutputPortSet(description=EventStoreSink.oport0Description, cardinality=1, optional=true)
 })
-
+@Libraries({"opt/*","opt/downloaded/*" })
 public class EventStoreSink extends AbstractOperator implements StateHandler {
     /* begin_generated_IBM_copyright_code */
     public static final String IBM_COPYRIGHT = 
