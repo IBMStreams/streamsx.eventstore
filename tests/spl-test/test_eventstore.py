@@ -144,7 +144,7 @@ class TestDistributed(unittest.TestCase):
         trigger_period = 10
         num_expected_tuples = 8000
         num_resets = 2
-        run_for = 120 # in seconds
+        run_for = 200 # in seconds
 
         beacon = op.Source(topo, "spl.utility::Beacon",
             'tuple<int64 id, rstring val>',
@@ -153,7 +153,7 @@ class TestDistributed(unittest.TestCase):
         beacon.val = beacon.output(spltypes.rstring('CR_TEST'))
         beacon.stream.set_consistent(ConsistentRegionConfig.periodic(trigger_period))
         
-        es.insert(beacon.stream, self.connection, self.database, 'StreamsCRTable', primary_key='id', front_end_connection_flag=True)
+        es.insert(beacon.stream, self.connection, self.database, 'StreamsCRTable', primary_key='id', front_end_connection_flag=True, user=self.es_user, password=self.es_password)
         
         #self._build_only(name, topo)
 
