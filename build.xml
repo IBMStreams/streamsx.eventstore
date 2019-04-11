@@ -1,0 +1,129 @@
+<project name="streamsx.eventstore" default="all" basedir=".">
+<!--
+// *******************************************************************************
+// * Copyright (C)2019, International Business Machines Corporation and *
+// * others. All Rights Reserved. *
+// *******************************************************************************
+-->
+    <description>
+        Build file for streamsx.eventstore project to build the toolkit and samples.
+    </description>
+  <!-- set global properties for this build -->
+  <property environment="env" />
+  <fail unless="env.STREAMS_INSTALL" message="STREAMS_INSTALL not set."/>
+  <property name="streams.install" value="${env.STREAMS_INSTALL}" />
+  <property name="toolkit" location="com.ibm.streamsx.eventstore"/>
+  <property name="test.dir" location="tests/spl-test"/>
+  <property name="tmp" location="tmp" />
+	
+	
+  <target name="all" depends="toolkit,spldoc"/>
+
+  <target name="clean" depends="cleansamples" description="clean up" >
+        <delete includeemptydirs="true">
+          <fileset dir="${basedir}" includes="tmp/"/>
+        </delete>
+        <delete includeemptydirs="true">
+          <fileset dir="${toolkit}" includes="doc/"/>
+        </delete>
+  	<ant dir="${toolkit}" target="clean"/>
+  	<ant dir="${test.dir}" target="clean"/>
+  </target>
+
+  <target name="distclean" depends="clean" description="Clean all, inclusive maven downloads" >
+	  	<ant dir="${toolkit}" target="distclean"/>
+  </target>
+
+  <target name="toolkit"
+        description="Build any code and index the toolkit." >
+  	<ant dir="${toolkit}" target="all"/>
+  </target>
+  
+  <target name="toolkitIndexOnly" description="Index the toolkit.">
+        <ant dir="${toolkit}" target="indexToolkit" /> 
+  </target> 	
+
+  <target name="spldoc" depends="toolkit"
+    description="Create SPLDOC">
+    <antcall target="spldoctoolkit">
+       <param name="tkdir" value="${toolkit}"/>
+       <param name="tktitle" value="IBMStreams streamsx.eventstore Toolkit"/>
+    </antcall>
+  </target>
+
+  <target name="samples" depends="toolkit">
+    <subant target="indextoolkit" genericantfile="${basedir}/build.xml">
+       <dirset dir="samples" includes="*"/>
+    </subant>
+  </target>
+
+  <target name="cleansamples">
+     <exec executable="make" failonerror="true" dir="${basedir}/samples">
+        <arg value="-f" />
+        <arg value="Makefile" />
+        <arg value="clean" />
+     </exec>
+  </target>
+
+  <target name="build-all-samples" depends="toolkit">
+     <exec executable="make" failonerror="true" dir="${basedir}/samples">
+        <arg value="-f" />
+        <arg value="Makefile" />
+        <arg value="all" />
+     </exec>
+  </target>
+
+  <target name="indextoolkit">
+     <echo message="Tookit to index: ${basedir}"/>
+     <exec executable="${streams.install}/bin/spl-make-toolkit" failonerror="true">
+        <arg value="--directory"/>
+        <arg value="${basedir}"/>
+        <arg value="-m"/>
+     </exec>
+  </target>
+
+  <target name="cleantoolkit">
+     <echo message="Tookit to clean: ${basedir}"/>
+     <exec executable="${streams.install}/bin/spl-make-toolkit">
+        <arg value="--clean"/>
+        <arg value="--directory"/>
+        <arg value="${basedir}"/>
+     </exec>
+     <delete dir="${basedir}/output" quiet="true"/>
+  </target>
+
+  <target name="spldoctoolkit">
+     <property name="tkdir" value="${basedir}"/>
+     <echo message="Toolkit to SPLDOC: ${tkdir}"/>
+     <exec executable="${streams.install}/bin/spl-make-doc">
+        <arg value="--include-composite-operator-diagram"/>
+        <arg value="--author"/>
+        <arg value="IBMStreams Open Source Community at GitHub - https://github.com/IBMStreams/${ant.project.name}"/>
+        <arg value="--doc-title"/>
+        <arg value="${tktitle}"/>
+        <arg value="--directory"/>
+        <arg value="${tkdir}"/>
+     	<arg value="--output-directory"/>
+        <arg value="${tkdir}/doc/en_US/spldoc/"/>
+     </exec>
+  </target>
+
+  <!-- Targets to build releases -->
+  <target name="release"  depends="clean,all">
+  	<mkdir dir="${tmp}" />
+	<!-- Create the time stamp -->
+	<tstamp />
+	<!-- Extract info from the toolkit's info.xml -->
+	<xmlproperty file="${toolkit}/info.xml" prefix="tkinfo" keepRoot="no" />
+	<echo message="Toolkit Version: ${tkinfo.info:identity.info:version}" />
+        <property name="releasefilename" value="${tmp}/streamsx.eventstore.toolkits-${tkinfo.info:identity.info:version}-${DSTAMP}-${TSTAMP}.tgz" />
+    	<tar compression="gzip" longfile="gnu"
+             destfile="${releasefilename}"
+    	     basedir="${basedir}"
+             includes="com.ibm.streamsx.eventstore/** samples/**"
+             excludes="**/.gitignore com.ibm.streamsx.eventstore/.settings/** com.ibm.streamsx.eventstore/.project com.ibm.streamsx.eventstore/.classpat*"
+    	/>
+        <checksum file="${releasefilename}"/>
+        <checksum algorithm="sha1" file="${releasefilename}"/>
+  </target>
+</project>
