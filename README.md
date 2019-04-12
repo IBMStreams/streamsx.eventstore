@@ -24,16 +24,11 @@ Developer 1.1.4	            | 1.x  | 1.x |
 For more information on installing IBM Db2 Event Store, see:
 <https://www.ibm.com/support/knowledgecenter/SSGNPV>
 
-## Build the toolkit
-
-[Build](BUILD.md)
 
 ## Documentation
 
-Find the full documentation [here](https://ibmstreams.github.io/streamsx.eventstore/).
-
-### Python package 
-
-There is a python package available, that exposes SPL operators in the `com.ibm.streamsx.eventstore` toolkit as Python methods.
-* [streamsx.eventstore python package](https://pypi.org/project/streamsx.eventstore/)
+* [Build the toolkit](BUILD.md)
+* [SPLDoc](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc2.0/html/).
 * [Python package documentation](http://streamsxeventstore.readthedocs.io)
+
+
