@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" output="impl/java/classes" path="src/main/java"/>
+	<classpathentry exported="true" kind="con" path="com.ibm.streams.java/com.ibm.streams.operator"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="opt/downloaded/json4s-core_2.11-3.2.11.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/protobuf-java-2.5.0.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/scala-library-2.11.8.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/scala-parser-combinators_2.11-1.0.1.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/scala-reflect-2.11.8.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/spark-catalyst_2.11-2.1.0.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/spark-core_2.11-2.1.0.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/spark-sql_2.11-2.1.0.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/spark-tags_2.11-2.1.0.jar"/>
+	<classpathentry kind="lib" path="opt/ibm-event_2.11-1.0.jar"/>
+	<classpathentry kind="lib" path="impl/lib/com.ibm.streamsx.eventstore.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
