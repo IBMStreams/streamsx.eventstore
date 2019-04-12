@@ -1,0 +1,777 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="reference"/>
+<meta name="DC.Title" content="Operator EventStoreSink"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="spldoc_operator"/>
+<link rel="stylesheet" type="text/css" href="../../html/commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../../html/spldoc.css"/>
+<title>Operator EventStoreSink</title>
+</head>
+<body id="spldoc_operator">
+
+
+<h1 class="title topictitle1">Operator <tt class="ph tt">EventStoreSink</tt></h1>
+
+<div class="body refbody">
+<div class="section">
+<p class="p">
+<a class="xref" href="../toolkits/toolkits.html">IBMStreams streamsx.eventstore Toolkit</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 2.0.0</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; EventStoreSink</p>
+
+</div>
+
+<div class="section splprimop">
+  <embed class="image" src="../../image/tk$com.ibm.streamsx.eventstore/op$com.ibm.streamsx.eventstore$EventStoreSink.svg" width="872" height="112"/>
+</div>
+
+<div class="section">
+
+<p class="p">The EventStoreSink inserts IBM Streams tuples in to an IBM Db2 Event Store table.
+</p>
+
+  <dl class="dl"><dt class="dt dlterm"><a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink$1.html">Data Types</a>
+</dt>
+<dd class="dd">
+</dd>
+</dl>
+
+  <dl class="dl"><dt class="dt dlterm"><a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink$2.html">Behavior in a consistent region</a>
+</dt>
+<dd class="dd">
+</dd>
+</dl>
+
+  <dl class="dl"><dt class="dt dlterm"><a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink$3.html">Example</a>
+</dt>
+<dd class="dd">
+</dd>
+</dl>
+
+</div>
+
+<div class="section"><h2 class="title sectiontitle splhead-1">Summary</h2>
+
+<dl class="dl" compact="compact">
+ 
+  <dt class="dt dlterm">Ports</dt>
+
+  <dd class="dd">This operator has 1 input port and 1 output port.</dd>
+
+ 
+ 
+  <dt class="dt dlterm">Windowing</dt>
+
+  <dd class="dd">This operator does not accept any windowing configurations.</dd>
+
+ 
+ 
+  <dt class="dt dlterm">Parameters</dt>
+
+  <dd class="dd">This operator supports 14 parameters.
+<p class="p"> Required: 
+<a class="xref" href="#spldoc_operator__parameter__connectionString">connectionString</a>, <a class="xref" href="#spldoc_operator__parameter__databaseName">databaseName</a>, <a class="xref" href="#spldoc_operator__parameter__tableName">tableName</a>
+
+</p>
+
+<p class="p"> Optional: 
+<a class="xref" href="#spldoc_operator__parameter__batchSize">batchSize</a>, <a class="xref" href="#spldoc_operator__parameter__configObject">configObject</a>, <a class="xref" href="#spldoc_operator__parameter__eventStorePassword">eventStorePassword</a>, <a class="xref" href="#spldoc_operator__parameter__eventStoreUser">eventStoreUser</a>, <a class="xref" href="#spldoc_operator__parameter__frontEndConnectionFlag">frontEndConnectionFlag</a>, <a class="xref" href="#spldoc_operator__parameter__maxNumActiveBatches">maxNumActiveBatches</a>, <a class="xref" href="#spldoc_operator__parameter__nullMapString">nullMapString</a>, <a class="xref" href="#spldoc_operator__parameter__partitioningKey">partitioningKey</a>, <a class="xref" href="#spldoc_operator__parameter__preserveOrder">preserveOrder</a>, <a class="xref" href="#spldoc_operator__parameter__primaryKey">primaryKey</a>, <a class="xref" href="#spldoc_operator__parameter__schemaName">schemaName</a>
+
+</p>
+</dd>
+
+ 
+ 
+  <dt class="dt dlterm">Metrics</dt>
+
+  <dd class="dd">This operator reports 7 metrics.</dd>
+
+ 
+</dl>
+</div>
+
+<div class="section"><h2 class="title sectiontitle splhead-1">Properties</h2>
+
+<dl class="dl" compact="compact">
+ 
+  <dt class="dt dlterm">Implementation</dt>
+
+  <dd class="dd">Java</dd>
+
+ 
+</dl>
+
+</div>
+
+<div class="section">
+<p class="p splhead-1"><strong class="ph b"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__input_port_set">Input Ports</a></strong></p>
+<dl class="dl">
+  
+   <dt class="dt dlterm">Ports (0)</dt>
+
+   <dd class="dd">
+
+<p class="p">Port that ingests tuples which are inserted into Db2 Event Store database table. The tuple field types and positions in the IBM Streams schema must match the field names in your IBM Db2 Event Store table schema exactly.Incoming tuples are processed in batches, where the processing will be to send rows to IBM Db2 Event Store, and is driven by the size of the batch. A batch is processed when it reaches at least the batch size.
+</p>
+   </dd>
+
+  
+    
+      <dt class="dt dlterm">Properties</dt>
+
+      <dd class="dd">
+   <ul class="sl simple">
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__input_port_set__optional">Optional</a>: false
+     </li>
+
+   </ul>
+
+   <ul class="sl simple">
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__input_port_set__controlport">ControlPort</a>: false
+</li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__input_port_set__windowingmode">WindowingMode</a>: NonWindowed
+</li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__input_port_set__windowpunctuationinputmode">WindowPunctuationInputMode</a>: Oblivious
+</li>
+
+   </ul>
+
+      </dd>
+
+    
+</dl>
+
+</div>
+
+<div class="section">
+<p class="p splhead-1"><strong class="ph b"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__output_port_set">Output Ports</a></strong></p>
+<dl class="dl">
+  
+     <dt class="dt dlterm">Assignments</dt>
+
+       <dd class="dd">Java operators do not support output assignments.
+       </dd>
+
+  
+</dl>
+
+<dl class="dl">
+  
+   <dt class="dt dlterm">Ports (0)</dt>
+
+   <dd class="dd">
+
+<p class="p">Port that optionally produces tuple insert results. This output port is intended to output the information on whether a tuple was successful or not when it was inserted into the database. EventStoreSink looks for a Boolean field called <tt class="ph tt">_Inserted_</tt> in the output stream. EventStoreSink sets the field to <tt class="ph tt">true</tt> if the data was successfully inserted and <tt class="ph tt">false</tt> if the insert failed. Besides the <tt class="ph tt">_Inserted_</tt> column, the output will include the original tuple attributes (from input stream) that was processed by the EventStoreSink operator. 
+</p>
+
+<p class="p"/>
+
+   <dl class="dl">
+    
+      <dt class="dt dlterm">Properties</dt>
+
+      <dd class="dd">
+   <ul class="sl simple">
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__output_port_set__optional">Optional</a>: true
+     </li>
+
+   </ul>
+
+   <ul class="sl simple">
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__output_port_set__windowpunctuationoutputmode">WindowPunctuationOutputMode</a>: Free
+     </li>
+
+   </ul>
+
+      </dd>
+
+    
+   </dl>
+
+   <p class="p"/>
+
+   </dd>
+
+  
+</dl>
+
+</div>
+
+<div class="section">
+<p class="p splhead-1"><strong class="ph b"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters">Parameters</a></strong></p>
+This operator supports 14 parameters.
+<p class="p"> Required: 
+<a class="xref" href="#spldoc_operator__parameter__connectionString">connectionString</a>, <a class="xref" href="#spldoc_operator__parameter__databaseName">databaseName</a>, <a class="xref" href="#spldoc_operator__parameter__tableName">tableName</a>
+
+</p>
+
+<p class="p"> Optional: 
+<a class="xref" href="#spldoc_operator__parameter__batchSize">batchSize</a>, <a class="xref" href="#spldoc_operator__parameter__configObject">configObject</a>, <a class="xref" href="#spldoc_operator__parameter__eventStorePassword">eventStorePassword</a>, <a class="xref" href="#spldoc_operator__parameter__eventStoreUser">eventStoreUser</a>, <a class="xref" href="#spldoc_operator__parameter__frontEndConnectionFlag">frontEndConnectionFlag</a>, <a class="xref" href="#spldoc_operator__parameter__maxNumActiveBatches">maxNumActiveBatches</a>, <a class="xref" href="#spldoc_operator__parameter__nullMapString">nullMapString</a>, <a class="xref" href="#spldoc_operator__parameter__partitioningKey">partitioningKey</a>, <a class="xref" href="#spldoc_operator__parameter__preserveOrder">preserveOrder</a>, <a class="xref" href="#spldoc_operator__parameter__primaryKey">primaryKey</a>, <a class="xref" href="#spldoc_operator__parameter__schemaName">schemaName</a>
+
+</p>
+<dl class="dl">
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__batchSize"><!-- --></a><tt class="ph tt">batchSize</tt></dt>
+
+<dd class="dd">
+<p class="p">Specifies the batch size for the number of rows that will be batched in the operator before the batch is inserted into IBM Db2 Event Store by using the <tt class="ph tt">batchInsertAsync</tt> method. If you do not specify this parameter, the batchSize defaults to the estimated number of rows that could fit into an 8K memory page.
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: int32
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__configObject"><!-- --></a><tt class="ph tt">configObject</tt></dt>
+
+<dd class="dd">
+<p class="p">Specify the application configuration name. An application configuration can be created in the Streams Console or using the <tt class="ph tt">streamtool mkappconfig ... &lt;configObject name&gt;</tt>. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: <tt class="ph tt">eventStoreUser</tt> and <tt class="ph tt">eventStorePassword</tt>
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__connectionString"><!-- --></a><tt class="ph tt">connectionString</tt></dt>
+
+<dd class="dd">
+<p class="p">Specifies the IBM Db2 Event Store connection endpoint as a set of IP addresses and ports: &lt;IP&gt;:&lt;port&gt;. Separate multiple entries with a comma.
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: false
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__databaseName"><!-- --></a><tt class="ph tt">databaseName</tt></dt>
+
+<dd class="dd">
+<p class="p">The name of an existing IBM Db2 Event Store database in order to connect
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: false
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__eventStorePassword"><!-- --></a><tt class="ph tt">eventStorePassword</tt></dt>
+
+<dd class="dd">
+<p class="p">Password for the IBM Db2 Event Store User in order to connect. If you do not specify the <tt class="ph tt">eventStorePassword</tt> parameter or an empty string is set, then a default is used.
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__eventStoreUser"><!-- --></a><tt class="ph tt">eventStoreUser</tt></dt>
+
+<dd class="dd">
+<p class="p">Name of the IBM Db2 Event Store User in order to connect. If you do not specify the <tt class="ph tt">eventStoreUser</tt> parameter or an empty string is set, then a default is used.
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__frontEndConnectionFlag"><!-- --></a><tt class="ph tt">frontEndConnectionFlag</tt></dt>
+
+<dd class="dd">
+<p class="p">Set to true to connect through a Secure Gateway for Event Store Enterprise Edition version &gt;= 1.1.2 and Developer Edition version &gt; 1.1.4
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: boolean
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__maxNumActiveBatches"><!-- --></a><tt class="ph tt">maxNumActiveBatches</tt></dt>
+
+<dd class="dd">
+<p class="p">Set the maximum number of active batches.
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: int32
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__nullMapString"><!-- --></a><tt class="ph tt">nullMapString</tt></dt>
+
+<dd class="dd">
+<p class="p">Set the null map JSON represented by a string.
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__partitioningKey"><!-- --></a><tt class="ph tt">partitioningKey</tt></dt>
+
+<dd class="dd">
+<p class="p">Partitioning key for the table. A string of attribute names separated by commas. The order of the attribute names defines the order of entries in the sharding key for the IBM Db2 Event Store table. The attribute names are the names of the fields in the stream. The <tt class="ph tt">partitioningKey</tt> parameter is used only if the table does not yet exist in the IBM Db2 Event Store database. If you do not specify this parameter or if the key string is empty, the key defaults to making the first column in the stream as the shard key. For example, "col1, col2, col3"
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__preserveOrder"><!-- --></a><tt class="ph tt">preserveOrder</tt></dt>
+
+<dd class="dd">
+<p class="p">Preserve order if true
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: boolean
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__primaryKey"><!-- --></a><tt class="ph tt">primaryKey</tt></dt>
+
+<dd class="dd">
+<p class="p">Primary key for the table. A string of attribute names separated by commas. The order of the attribute names defines the order of entries in the primary key for the IBM Db2 Event Store table. The attribute names are the names of the fields in the stream. The <tt class="ph tt">primaryKey</tt> parameter is used only, if the table does not yet exist in the IBM Db2 Event Store database. If you do not specify this parameter, the resulting table has an empty primary key.
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__schemaName"><!-- --></a><tt class="ph tt">schemaName</tt></dt>
+
+<dd class="dd">
+<p class="p">The name of the table schema name of the table into which to insert data. If not used the default will be the user id.
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: true
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+
+<dt class="dt dlterm"><a name="spldoc_operator__parameter__tableName"><!-- --></a><tt class="ph tt">tableName</tt></dt>
+
+<dd class="dd">
+<p class="p">The name of the table into which you want to insert data from the IBM Streams application. If the table does not exist, the table is automatically created in IBM Db2 Event Store.
+</p>
+<dl class="dl">
+
+ <dt class="dt dlterm">Properties </dt>
+
+ <dd class="dd">
+  <ul class="sl simple">
+  <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__type">Type</a>: rstring
+  </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__cardinality">Cardinality</a>: 1
+     </li>
+
+     <li class="sli"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__parameters__parameter__optional">Optional</a>: false
+     </li>
+
+  </ul>
+
+ </dd>
+
+
+</dl>
+
+</dd>
+
+
+</dl>
+
+</div>
+
+<div class="section">
+<p class="p splhead-1"><strong class="ph b"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics">Metrics</a></strong></p>
+<dl class="dl">
+  
+    <dt class="dt dlterm"><tt class="ph tt">NumBatchesPerInsert</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_gauge">Gauge</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Number of batches inserted together
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">insertTimeAvg</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_time">Time</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Average time to perform a successful batch insert.
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">insertTimeMax</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_time">Time</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Maximal duration to perform a successful batch insert.
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">insertTimeMin</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_time">Time</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Minimal duration to perform a successful batch insert.
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">nActiveInserts</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_counter">Counter</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Number of active insert requests
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">nWriteFailures</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_counter">Counter</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Number of tuples that failed to get written to IBM Db2 Event Store
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+  
+    <dt class="dt dlterm"><tt class="ph tt">nWriteSuccesses</tt> - <a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__metrics_kind_counter">Counter</a></dt>
+
+    <dd class="dd">
+
+<p class="p">Number of tuples that were written to IBM Db2 Event Store successfully
+</p>
+
+     <p class="p"/>
+
+     </dd>
+
+  
+</dl>
+
+</div>
+
+<div class="section">
+<p class="p splhead-1"><strong class="ph b"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__dependencies">Libraries</a></strong></p>
+
+ <dl class="dl">
+ 
+  <dt class="dt dlterm">Operator class library
+  </dt>
+
+  <dd class="dd"/>
+
+  <dd class="dd"><a class="xref" href="../references/OperatorModel.html#spldoc_reference_operator_model__context__dependencies__managedlibrary__libpath">Library Path</a>: <tt class="ph tt">../../impl/lib/com.ibm.streamsx.eventstore.jar, ../../opt/*, ../../opt/downloaded/*</tt></dd>
+
+ 
+ </dl>
+
+</div>
+
+</div>
+
+
+</body>
+</html>
