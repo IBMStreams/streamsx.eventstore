@@ -28,7 +28,7 @@ For more information on installing IBM Db2 Event Store, see:
 ## Documentation
 
 * [Build the toolkit](BUILD.md)
-* [SPLDoc](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc2.0/html/).
+* [SPLDoc](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc2.0/html/)
 * [Python package documentation](http://streamsxeventstore.readthedocs.io)
 
 
