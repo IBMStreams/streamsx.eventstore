@@ -121,7 +121,7 @@
              destfile="${releasefilename}"
     	     basedir="${basedir}"
              includes="com.ibm.streamsx.eventstore/** samples/**"
-             excludes="**/.gitignore com.ibm.streamsx.eventstore/.settings/** com.ibm.streamsx.eventstore/.project com.ibm.streamsx.eventstore/.classpat*"
+             excludes="**/.gitignore com.ibm.streamsx.eventstore/.settings/** com.ibm.streamsx.eventstore/impl/java/** com.ibm.streamsx.eventstore/src/** com.ibm.streamsx.eventstore/lib com.ibm.streamsx.eventstore/com.ibm.streamsx.eventstore/EventStoreSink/.gitkeep com.ibm.streamsx.eventstore/.project com.ibm.streamsx.eventstore/.gitignore com.ibm.streamsx.eventstore/.toolkitList com.ibm.streamsx.eventstore/recompile.sh com.ibm.streamsx.eventstore/pom.xml com.ibm.streamsx.eventstore/build.xml com.ibm.streamsx.eventstore/.classpat*"
     	/>
         <checksum file="${releasefilename}"/>
         <checksum algorithm="sha1" file="${releasefilename}"/>
