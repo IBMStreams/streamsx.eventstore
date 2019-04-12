@@ -24,21 +24,12 @@
 package com.ibm.streamsx.eventstore;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ArrayList;
-import java.util.Queue;
-import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.spark.sql.catalyst.expressions.GenericRow;
-import org.apache.spark.sql.Row;
 
 import com.ibm.streams.operator.AbstractOperator;
 import com.ibm.streams.operator.OperatorContext;
@@ -71,7 +62,6 @@ import com.ibm.streamsx.eventstore.EventStoreSinkImpl;
 //import com.ibm.streamsx.eventstore.EventStoreSinkJImplObject;
 //import com.ibm.streamsx.eventstore.EventStoreSinkJImpl;
 import org.apache.log4j.Logger;
-import scala.collection.JavaConversions;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -513,8 +503,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         return new LinkedList</*Row*/Tuple>();
     }
 
-    private Future<Object> activeTimeout;
-
     /**
      *      * Notification that initialization is complete and all input and output ports 
      *           * are connected and ready to receive and submit tuples.
@@ -584,7 +572,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      * Process any final punctuation by flushing the batch
      * and waiting for all the work to complete.
      */
-    @SuppressWarnings("incomplete-switch")
     public void processPunctuation(StreamingInput<Tuple> port, Punctuation mark)
           throws Exception {
         // No need to call super.processPunctuation because that just forwards
@@ -628,106 +615,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     	}
     }
     
-    /**
-     * Set of the background tasks that have been kicked off
-     * for batch processing (calling processBatch()).
-     * 
-     */
-    private final Set<Future<?>> activeBatches = new HashSet<Future<?>>();
-    
-    /**
-     * Test to see if all the batches are complete.
-     */
-    private synchronized boolean batchesComplete() {
-        boolean allComplete = true;
-        for (Iterator<Future<?>> i = activeBatches.iterator(); i.hasNext(); )
-        {
-            Future<?> batch = i.next();
-            if (batch.isDone())
-                i.remove();
-            else
-                allComplete = false;
-        }
-        return allComplete;
-    }
-    
-    /**
-     * Wait for any outstanding batch item.
-     */
-    private void batchWait() {
-        Future<?> waitBatch = null;
-        
-        synchronized (this) {
-            for (Iterator<Future<?>> i = activeBatches.iterator(); i.hasNext();) {
-                Future<?> batch = i.next();
-                if (!batch.isDone())
-                {
-                    waitBatch = batch;
-                    break;
-                }
-            }
-        }
-        if (waitBatch != null)
-            try {
-                waitBatch.get();
-            } catch (InterruptedException e) {
-                ;
-            } catch (ExecutionException e) {
-                ;
-            }
-    }
-    
-
-    /**
-     * Submit a batch of tuples to be processed by the sub-classes processBatch
-     * using a asynchronous task.
-     * @param submitter True if this is being called from a task that itself was
-     * created by submitBatch.
-     */
-    private /*synchronized*/ void submitBatch(boolean submitter) throws Exception {
-        // We are processing so remove any existing timeout
-        /*if (activeTimeout != null) {
-            activeTimeout.cancel(false);
-            activeTimeout = null;
-        }*/
-        // Async threads may mean this is called just after
-        // another submit batch so if nothing to do, just complete.
-        synchronized (this) {
-            //boolean allComplete = batchesComplete();
-        	if (tracer.isInfoEnabled()) {
-        		tracer.log(TraceLevel.INFO, "The number of activebatches in submitbatch = " + activeBatches.size());
-        	}
-            // Limit the number of outstanding tasks.
-            if (/*!submitter && !allComplete &&*/ activeBatches.size() >= 1){ //maxNumActiveBatches) {
-                tracer.log(TraceLevel.ERROR, "Inside submitBatch too many batch processes");
-                return;
-            }
-        }
-
-        activeBatches.add(getOperatorContext().getScheduledExecutorService()
-                .submit(new Callable<Object>() {
-                    public Object call() throws Exception {
-                        while(!shutdown ) {
-                                LinkedList</*Row*/Tuple> asyncBatch = batchQueue.take();
-                                if( asyncBatch == null ){
-                                    continue;
-                                }
-
-                                if (tracer.isDebugEnabled()) {
-                                	tracer.log(TraceLevel.DEBUG, "Found a non-empty batch so call insert from submitbatch");
-                                }
-                                boolean addLeftovers = processBatch(asyncBatch);
-
-                                if (tracer.isDebugEnabled()) {
-                                	tracer.log(TraceLevel.DEBUG, "In submitBatch call after processbatch with addLeftovers = " + addLeftovers);
-                                }
-
-                        }
-                        return null;
-                    }
-                }));
-    }
-
     /**
      * Shutdown this operator.
      * @throws Exception Operator failure, will cause the enclosing PE to terminate.
@@ -1247,6 +1134,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 		    "\\n            expression<int32>   $batchSize: (int32)getSubmissionTimeValue(\\\"batchSize\\\", \\\"1000\\\");"+
 		    "\\n            expression<rstring> $databaseName: getSubmissionTimeValue(\\\"databaseName\\\");"+
 		    "\\n            expression<rstring> $tableName: getSubmissionTimeValue(\\\"tableName\\\");"+
+		    "\\n            expression<rstring> $schemaName: getSubmissionTimeValue(\\\"schemaName\\\");"+
 		    "\\n            expression<rstring> $eventStoreUser: getSubmissionTimeValue(\\\"eventStoreUser\\\", \\\"\\\");"+
 		    "\\n            expression<rstring> $eventStorePassword: getSubmissionTimeValue(\\\"eventStorePassword\\\", \\\"\\\");"+ 
 		    "\\n    "+
@@ -1266,6 +1154,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 			"\\n                    databaseName: $databaseName;"+
 			"\\n                    primaryKey: 'key';"+
 			"\\n                    tableName: $tableName;"+
+			"\\n                    schemaName: $schemaName;"+
 			"\\n                    eventStoreUser: $eventStoreUser;"+
 			"\\n                    eventStorePassword: $eventStorePassword;"+
 			"\\n            }"+

@@ -12,7 +12,7 @@ You can find precompiled EventStoreSink toolkits for various IBM Db2 Event Store
 
 ## Supported versions
 
-IBM Db2 Event Store            | com.ibm.streamsx.eventstore toolkit version | streamsx.eventstore python package |
+IBM Db2 Event Store            | [com.ibm.streamsx.eventstore toolkit version](https://github.com/IBMStreams/streamsx.eventstore/releases) | [streamsx.eventstore python package](https://pypi.org/project/streamsx.eventstore/) |
 --------            | -------------- | -----------  |
 Enterprise 2.0.0	            | 2.x  | 2.x |
 Enterprise 1.1.3             | 1.x      | 1.x |
@@ -23,5 +23,12 @@ Developer 1.1.4	            | 1.x  | 1.x |
 
 For more information on installing IBM Db2 Event Store, see:
 <https://www.ibm.com/support/knowledgecenter/SSGNPV>
+
+
+## Documentation
+
+* [Build the toolkit](BUILD.md)
+* [SPLDoc](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc2.0/html/)
+* [Python package documentation](http://streamsxeventstore.readthedocs.io)
 
 

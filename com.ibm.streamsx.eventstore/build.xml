@@ -28,6 +28,7 @@
 	<property name="test.build.dir" value="${test.run.dir}/bin" />
 	<property name="gensrc.dir" location="impl/java/src-gen" />
 	
+  <fail unless="env.SCALA_HOME" message="SCALA_HOME not set."/>
   <property name="scala.home" value="${env.SCALA_HOME}"/>
   <property name="scala-library.jar"
             value="${scala.home}/lib/scala-library.jar"/>
@@ -97,7 +98,6 @@
 	 </exec>
 	</target>
 	
-	<!-- In order to downloads libraries using maven: add maven-deps to depends below -->
 	<target name="compile" depends="init, maven-deps, compile-scala">
 		<javac srcdir="${src.dir}" destdir="${build.dir}" debug="true"
 			includeantruntime="no" deprecation="true">
