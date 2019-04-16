@@ -3,6 +3,7 @@ import unittest
 from streamsx.topology.topology import *
 from streamsx.topology.tester import Tester
 from streamsx.topology.state import ConsistentRegionConfig
+from streamsx.topology.schema import CommonSchema, StreamSchema
 import streamsx.spl.op as op
 import streamsx.spl.toolkit as tk
 import streamsx.rest as sr
@@ -11,6 +12,7 @@ import streamsx.eventstore as es
 
 import os
 import subprocess
+from subprocess import call, Popen, PIPE
 
 import streamsx.topology.context
 import requests
@@ -102,6 +104,22 @@ class TestDistributed(unittest.TestCase):
         ri = subprocess.call([os.path.join(si, 'bin', 'spl-make-toolkit'), '-i', tkl])
 
 
+    def _run_shell_command_line(self, command):
+        process = Popen(command, universal_newlines=True, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        return stdout, stderr, process.returncode
+
+    def _create_app_config(self):
+        if ("TestICP" in str(self)):
+            print ("Create eventstore application configuration with REST")
+            # get instance
+            #configure_connection(instance, database=self.database, connection=self.connection, user=self.es_user, password=self.es_password)
+        else:
+            if streams_install_env_var():
+                print ("Create eventstore application configuration with streamtool")
+                stdout, stderr, err = self._run_shell_command_line('cd '+self.samples_location+'; make configure')
+                print (str(err))
+
     def test_insert_sample_flush_remaining_tuples(self):
         print ('\n---------'+str(self))
         name = 'test_insert_sample_flush_remaining_tuples'
@@ -153,7 +171,7 @@ class TestDistributed(unittest.TestCase):
         beacon.val = beacon.output(spltypes.rstring('CR_TEST'))
         beacon.stream.set_consistent(ConsistentRegionConfig.periodic(trigger_period))
         
-        es.insert(beacon.stream, self.connection, self.database, 'StreamsCRTable', primary_key='id', front_end_connection_flag=True, user=self.es_user, password=self.es_password)
+        es.insert(beacon.stream, connection=self.connection, database=self.database, table='StreamsCRTable', primary_key='id', front_end_connection_flag=True, user=self.es_user, password=self.es_password)
         
         #self._build_only(name, topo)
 
@@ -162,13 +180,62 @@ class TestDistributed(unittest.TestCase):
         tester.resets(num_resets) # minimum number of resets for each region
 
         cfg = {}
-
         # change trace level
         job_config = streamsx.topology.context.JobConfig(tracing='warn')
         job_config.add(cfg)
-
         cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
+        tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
+        print (str(tester.result))
 
+
+    def _create_stream(self, topo):
+        s = topo.source([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20])
+        schema=StreamSchema('tuple<int32 id, rstring name>').as_tuple()
+        return s.map(lambda x : (x,'X'+str(x*2)), schema=schema)
+
+    def test_insert_udp(self):
+        print ('\n---------'+str(self))
+        topo = Topology('test_insert_udp')
+        self._add_toolkits(topo, None)
+        s = self._create_stream(topo)
+        result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
+        # user-defined parallelism with two channels (two EventStoreSink operators)
+        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', front_end_connection_flag=True, user=self.es_user, password=self.es_password)      
+        res.print()
+
+        #self._build_only('test_insert_udp', topo)
+        tester = Tester(topo)
+        tester.run_for(120)
+        tester.tuple_count(res, 20, exact=True)
+
+        cfg = {}
+        job_config = streamsx.topology.context.JobConfig(tracing='info')
+        job_config.add(cfg)
+        cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
+        tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
+        print (str(tester.result))
+
+
+    def test_insert_with_app_config(self):
+        print ('\n---------'+str(self))
+        self._create_app_config()
+
+        topo = Topology('test_insert_with_app_config')
+        self._add_toolkits(topo, None)
+        s = self._create_stream(topo)
+        result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
+        res = es.insert(s, config='eventstore', table='SampleTable', schema=result_schema, primary_key='id', front_end_connection_flag=True)      
+        res.print()
+
+        #self._build_only('test_insert_udp', topo)
+        tester = Tester(topo)
+        tester.run_for(120)
+        tester.tuple_count(res, 20, exact=True)
+
+        cfg = {}
+        job_config = streamsx.topology.context.JobConfig(tracing='info')
+        job_config.add(cfg)
+        cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
         tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
         print (str(tester.result))
 

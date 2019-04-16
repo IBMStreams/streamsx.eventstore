@@ -427,13 +427,13 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             resultsOutputPort = getOutput(0);
         }
 
-        //Obtain the configuration inforamtion using the configuration name
+        //Obtain the configuration information using the configuration name
         if( cfgObjectName != null && cfgObjectName != "" ){
             cfgMap = context.getPE().getApplicationConfiguration(cfgObjectName);
-            if (tracer.isInfoEnabled()) {
-            	tracer.log(TraceLevel.INFO, "Found application configuration object");
-            }
             if( cfgMap.size() > 0 ){
+                if (tracer.isInfoEnabled()) {
+                	tracer.log(TraceLevel.INFO, "Found application configuration object");
+                }            	
                 // Override input parameters
                 // Check if we have a eventStoreUser
                 if( cfgMap.containsKey("eventStoreUser") ){
@@ -450,9 +450,26 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     }
                 }
 
+                if( cfgMap.containsKey("connectionString") ){
+                	connectionString = cfgMap.get("connectionString");
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override connectionString  = " + connectionString);
+                    }
+                }
+                
+                if( cfgMap.containsKey("databaseName") ){
+                	databaseName = cfgMap.get("databaseName");
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override databaseName  = " + databaseName);
+                    }
+                }
             }
+            else  {
+            	tracer.log(TraceLevel.WARN, "Application configuration object is configured, but no valid properties found: " + cfgObjectName);
+            } 
         }
         if (tracer.isInfoEnabled()) {
+        	tracer.log(TraceLevel.INFO, "Connect to DB " + databaseName + " with " + connectionString);
         	tracer.log(TraceLevel.INFO, "Resulting eventStoreUser = " + eventStoreUser +
                 " and passwd = *****"); // + eventStorePassword);
         	tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
@@ -648,7 +665,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         return batchSize;
     }
 
-    @Parameter(name="databaseName", description = "The name of an existing IBM Db2 Event Store database in order to connect")
+    @Parameter(name="databaseName", optional=true, description = "The name of an existing IBM Db2 Event Store database in order to connect.")
     public void setDatabaseName(String s) {databaseName = s;}
 
     @Parameter(name="tableName", description = "The name of the table into which you want to insert data from the IBM Streams application. If the table does not exist, the table is automatically created in IBM Db2 Event Store.")
@@ -671,10 +688,10 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     /**
      * Set the IBM Db2 Event Store connection string
      * @param connectionString
-     *            If null then the code will use a Event Store config file to connect
+     *            If null then the connectString must be set in application configuration
      */
-    @Parameter(name="connectionString", 
-            description="Specifies the IBM Db2 Event Store connection endpoint as a set of IP addresses and ports: <IP>:<port>. Separate multiple entries with a comma.")
+    @Parameter(name="connectionString", optional=true,
+            description="Specifies the IBM Db2 Event Store connection endpoint as a set of IP addresses and ports: <IP>:<jdbc-port>;<IP>:<port>. Separate multiple entries with a comma.")
     public synchronized void setConnectionString( String connectString ) {
         connectionString = connectString;
     }
@@ -689,7 +706,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      *            Unit of the timeout value
      */
     @Parameter(name="frontEndConnectionFlag", optional=true,
-            description="Set to true to connect through a Secure Gateway for Event Store Enterprise Edition version >= 1.1.2 and Developer Edition version > 1.1.4")
+            description="Set to true to connect through a Secure Gateway for Event Store")
     public synchronized void setUseFrontendConnectionEndpoints(boolean frontEndConnectionFlag ) {
         this.frontEndConnectionFlag = frontEndConnectionFlag;
     }
@@ -763,14 +780,18 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      * Set the configObject which is the name of the IBM Streams configuration object that
      * will contain parameter settings that will override user parameter
      * settings and is used to hide security related information such
-     * as eventStoreUser and eventStorePassword
+     * as eventStoreUser and eventStorePassword and connectionString, databaseName
      * 
      * @param configObject
      */
 
     @Parameter(name = "configObject", optional=true, 
-               description = "Specify the application configuration name. An application configuration can be created in the Streams Console or using the `streamtool mkappconfig ... <configObject name>`. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: `eventStoreUser` and `eventStorePassword`")
-    public void setConfigObject(String s) { cfgObjectName = s; }
+               description = "Specify the application configuration name. An application configuration can be created in the Streams Console or using the `streamtool mkappconfig ... <configObject name>`. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: `connectionString`, `databaseName`, `eventStoreUser` and `eventStorePassword`")
+    public void setConfigObject(String s) { 
+    	if (!("".equals(s))) {
+    		cfgObjectName = s;
+    	}
+    }
 
     /**
      * Set the Userid information which will be null or a string
