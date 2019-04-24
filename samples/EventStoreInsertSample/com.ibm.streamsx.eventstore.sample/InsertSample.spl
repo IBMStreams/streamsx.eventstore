@@ -37,7 +37,7 @@ use com.ibm.streamsx.eventstore::*;
  */
 public composite InsertSample {
 	param
-		expression<rstring> $connectionString: getSubmissionTimeValue("connectionString");
+		expression<rstring> $connectionString: getSubmissionTimeValue("connectionString", "");
 		expression<int32>   $batchSize: (int32)getSubmissionTimeValue("batchSize", "50");
 		expression<rstring> $databaseName : getSubmissionTimeValue("databaseName", "EVENTDB");
 		expression<rstring> $tableName : getSubmissionTimeValue("tableName", "SimpleTab");
@@ -99,7 +99,7 @@ public composite InsertSample {
  */
 public composite InsertSampleComp (output SampleResult) {
 	param
-		expression<rstring> $connectionString;
+		expression<rstring> $connectionString: "";
 		expression<int32>   $batchSize: 50;
 		expression<rstring> $databaseName: "EVENTDB";
 		expression<rstring> $tableName: "SimpleTab";
