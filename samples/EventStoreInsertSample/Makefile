@@ -49,3 +49,8 @@ clean:
 
 tkidx:
 	$(STREAMS_INSTALL)/bin/spl-make-toolkit -i .
+
+configure:
+	-streamtool rmappconfig --noprompt eventstore
+	streamtool mkappconfig --property databaseName=$(EVENTSTORE_DB) --property connectionString="$(EVENTSTORE_CONNECTION)" --property eventStoreUser=$(EVENTSTORE_USER) --property eventStorePassword=$(EVENTSTORE_PASSWORD) eventstore
+

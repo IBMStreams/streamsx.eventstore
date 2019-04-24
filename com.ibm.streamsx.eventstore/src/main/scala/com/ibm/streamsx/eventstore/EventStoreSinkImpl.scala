@@ -33,7 +33,8 @@ object EventStoreSinkImpl {
                 frontEndConnectionFlag : Boolean,
 		streamSchema: StreamSchema, nullMapString: String,
                 eventStoreUser: String, eventStorePassword: String,
-                partitioningKey: String, primaryKey: String): EventStoreSinkImpl = {
+                partitioningKey: String, primaryKey: String,
+                sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String): EventStoreSinkImpl = {
     log.trace("Initializing the Event Store writer operator")
 
     if( databaseName == null || databaseName.isEmpty() ||
@@ -50,7 +51,8 @@ object EventStoreSinkImpl {
       new EventStoreSinkImpl(databaseName, tableName, schemaName,
 		connectionString, frontEndConnectionFlag, streamSchema, nullMapString, 
                 eventStoreUser, eventStorePassword,
-                partitioningKey, primaryKey)
+                partitioningKey, primaryKey,
+                sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword)
     } catch { case e: Exception => 
       log.error("Bad connection")
       throw e 
@@ -66,7 +68,8 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
                          frontEndConnectionFlag: Boolean, 
                          streamSchema: StreamSchema,
                          nullMapString: String, eventStoreUser: String, eventStorePassword: String,
-                         partitioningKey: String, primaryKey: String) {
+                         partitioningKey: String, primaryKey: String,
+                         sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String) {
   protected val log = Logger.getLogger("EventStoreSinkImpl")//EventStoreSink.class.getName());
 
   var context: EventContext = null
@@ -169,6 +172,19 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
         if (eventStorePassword != null) {
            ConfigurationReader.setEventPassword(eventStorePassword)
            ConfigurationReader.setLegacyEventPassword(eventStorePassword)
+        }
+
+        if (sslConnection) {
+           ConfigurationReader.setSSLEnabled("true")
+           ConfigurationReader.setSslTrustStoreLocation(trustStore)
+           ConfigurationReader.setSslTrustStorePassword(trustStorePassword)
+           ConfigurationReader.setSslKeyStoreLocation(keyStore)
+           ConfigurationReader.setSslKeyStorePassword(keyStorePassword)
+           //ConfigurationReader.setClientPluginName(name: String)
+           //ConfigurationReader.setClientPlugin(pluginFlag: Boolean)
+        }
+        else {
+           ConfigurationReader.setSSLEnabled("false")
         }
 
         context = EventContext.getEventContext(databaseName)

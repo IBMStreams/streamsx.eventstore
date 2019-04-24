@@ -30,17 +30,21 @@ use com.ibm.streamsx.eventstore::*;
  *
  * @param eventStorePassword
  * The password to use to connect to IBM Db2 Event Store.
+ *
+ * @param configObject
+ * Specify the application configuration name. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: connectionString, databaseName, eventStoreUser and eventStorePassword
  * 
  */
 public composite InsertSample {
 	param
-		expression<rstring> $connectionString: getSubmissionTimeValue("connectionString");
+		expression<rstring> $connectionString: getSubmissionTimeValue("connectionString", "");
 		expression<int32>   $batchSize: (int32)getSubmissionTimeValue("batchSize", "50");
 		expression<rstring> $databaseName : getSubmissionTimeValue("databaseName", "EVENTDB");
 		expression<rstring> $tableName : getSubmissionTimeValue("tableName", "SimpleTab");
 		expression<rstring> $schemaName : getSubmissionTimeValue("schemaName", ""); // empty uses default
 		expression<rstring> $eventStoreUser : getSubmissionTimeValue("eventStoreUser", ""); // empty uses default
 		expression<rstring> $eventStorePassword : getSubmissionTimeValue("eventStorePassword", ""); // empty uses default
+		expression<rstring> $configObject : getSubmissionTimeValue("configObject", ""); // empty not used
 
 	graph
 
@@ -53,6 +57,7 @@ public composite InsertSample {
 				schemaName: $schemaName;
 				eventStoreUser: $eventStoreUser;
 				eventStorePassword: $eventStorePassword;
+				configObject: $configObject;
 		}	
 }
 
@@ -85,13 +90,16 @@ public composite InsertSample {
  *
  * @param frontEndConnectionFlag
  * Set to true to connect through a Secure Gateway for Event Store
+ *
+ * @param configObject
+ * Specify the application configuration name. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: connectionString, databaseName, eventStoreUser and eventStorePassword
  * 
  * @output SampleResult
  * This stream is evaluated by the tester.
  */
 public composite InsertSampleComp (output SampleResult) {
 	param
-		expression<rstring> $connectionString;
+		expression<rstring> $connectionString: "";
 		expression<int32>   $batchSize: 50;
 		expression<rstring> $databaseName: "EVENTDB";
 		expression<rstring> $tableName: "SimpleTab";
@@ -100,6 +108,7 @@ public composite InsertSampleComp (output SampleResult) {
 		expression<rstring> $eventStorePassword : ""; // empty uses default
 		expression<int32>   $iterations: 100;
 		expression<boolean> $frontEndConnectionFlag: true;
+		expression<rstring> $configObject: "";
 	type
 	        SimpleType = int32 id, int64 id2, rstring name;
 
@@ -115,6 +124,7 @@ public composite InsertSampleComp (output SampleResult) {
 
 		stream<int32 id, int64 id2, rstring name, boolean _Inserted_> InsertResults = com.ibm.streamsx.eventstore::EventStoreSink(Beacon) {
 			param
+				configObject: $configObject;
 				batchSize: $batchSize;
 				connectionString: $connectionString;
 				databaseName: $databaseName;
