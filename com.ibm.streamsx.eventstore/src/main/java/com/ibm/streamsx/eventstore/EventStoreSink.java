@@ -116,8 +116,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     private static Logger tracer = Logger.getLogger(EventStoreSink.class.getName());
 
-    EventStoreSinkImpl/* EventStoreSinkJImpl*/ impl = null;
-
+    EventStoreSinkImpl/* EventStoreSinkJImpl*/ impl = null;    
+    
     String databaseName = null;
     String tableName = null;
     String schemaName = null;
@@ -130,6 +130,13 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private String cfgObjectName = "";
     private Map<String, String> cfgMap;
 
+ 	// SSL parameters
+ 	private String keyStore;
+ 	private String trustStore;
+ 	private String keyStorePassword;
+ 	private String trustStorePassword;
+ 	private boolean sslConnection;    
+    
     // Flag to specify if the optional tuple insert result port is used
     private boolean hasResultsPort = false;
     // Variable to specify tuple insert result output port
@@ -473,6 +480,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         	tracer.log(TraceLevel.INFO, "Resulting eventStoreUser = " + eventStoreUser +
                 " and passwd = *****"); // + eventStorePassword);
         	tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
+        	tracer.log(TraceLevel.INFO, "sslConnection: " + isSslConnection());
         }
 
         // Set up connection to the IBM Db2 Event Store engine
@@ -487,7 +495,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
-                            partitioningKey, primaryKey);
+                            partitioningKey, primaryKey,
+                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword);
                 }
                 else{
                 	if (tracer.isInfoEnabled()) {
@@ -497,7 +506,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
-                            partitioningKey, primaryKey);
+                            partitioningKey, primaryKey,
+                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword);
                 }
             }
             // If the batch size if not provided calculate the default batchSize
@@ -845,6 +855,62 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 		description = "Primary key for the table. A string of attribute names separated by commas. The order of the attribute names defines the order of entries in the primary key for the IBM Db2 Event Store table. The attribute names are the names of the fields in the stream. The `primaryKey` parameter is used only, if the table does not yet exist in the IBM Db2 Event Store database. If you do not specify this parameter, the resulting table has an empty primary key.")
     public void setPrimaryKey(String s) {primaryKey = s;}
 
+    
+	//Parameter sslConnection
+	@Parameter(name = "sslConnection", optional = true, 
+			description = "This optional parameter specifies whether an SSL connection should be made to the database. When set to `true`, the **keyStore**, **keyStorePassword**, **trustStore** and **trustStorePassword** parameters can be used to specify the locations and passwords of the keyStore and trustStore. The default value is `false`.")
+	public void setSslConnection(boolean sslConnection) {
+		this.sslConnection = sslConnection;
+	}
+    
+	public boolean isSslConnection() {
+		return sslConnection;
+	}
+
+	// Parameter keyStore
+	@Parameter(name = "keyStore" , optional = true, 
+			description = "This optional parameter specifies the path to the keyStore. If a relative path is specified, the path is relative to the application directory. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
+	public void setKeyStore(String keyStore) {
+		this.keyStore = keyStore;
+	}
+
+	public String getKeyStore() {
+		return keyStore;
+	}
+
+	// Parameter keyStorePassword
+	@Parameter(name = "keyStorePassword", optional = true, 
+			description = "This parameter specifies the password for the keyStore given by the **keyStore** parameter. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
+	public void setKeyStorePassword(String keyStorePassword) {
+		this.keyStorePassword = keyStorePassword;
+	}
+
+	public String getKeyStorePassword() {
+		return keyStorePassword;
+	}
+
+	// Parameter trustStore
+	@Parameter(name = "trustStore", optional = true, 
+			description = "This optional parameter specifies the path to the trustStore. If a relative path is specified, the path is relative to the application directory. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
+	public void setTrustStore(String trustStore) {
+		this.trustStore = trustStore;
+	}
+
+	public String getTrustStore() {
+		return trustStore;
+	}
+
+	// Parameter trustStorePassword
+	@Parameter(name = "trustStorePassword", optional = true, 
+			description = "This parameter specifies the password for the trustStore given by the **trustStore** parameter. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
+	public void setTrustStorePassword(String trustStorePassword) {
+		this.trustStorePassword = trustStorePassword;
+	}
+
+	public String getTrustStorePassword() {
+		return trustStorePassword;
+	}    
+    
     /**
      * Get the batch timeout value.
      * 
