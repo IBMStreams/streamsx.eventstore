@@ -23,6 +23,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 package com.ibm.streamsx.eventstore;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -65,6 +66,8 @@ import org.apache.log4j.Logger;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * IBM Db2 Event Store streams sink operator class 
@@ -135,7 +138,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
  	private String trustStore;
  	private String keyStorePassword;
  	private String trustStorePassword;
- 	private boolean sslConnection;    
+ 	private boolean sslConnection = false;
+ 	private String pluginName;
+ 	private boolean pluginFlag = false;
     
     // Flag to specify if the optional tuple insert result port is used
     private boolean hasResultsPort = false;
@@ -481,6 +486,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                 " and passwd = *****"); // + eventStorePassword);
         	tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
         	tracer.log(TraceLevel.INFO, "sslConnection: " + isSslConnection());
+        	tracer.log(TraceLevel.INFO, "frontEndConnectionFlag: " + this.frontEndConnectionFlag);
         }
 
         // Set up connection to the IBM Db2 Event Store engine
@@ -496,7 +502,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
                             partitioningKey, primaryKey,
-                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword);
+                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword, 
+                            pluginName, pluginFlag);
                 }
                 else{
                 	if (tracer.isInfoEnabled()) {
@@ -507,7 +514,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
                             partitioningKey, primaryKey,
-                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword);
+                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword,
+                            pluginName, pluginFlag);
                 }
             }
             // If the batch size if not provided calculate the default batchSize
@@ -871,7 +879,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 	@Parameter(name = "keyStore" , optional = true, 
 			description = "This optional parameter specifies the path to the keyStore. If a relative path is specified, the path is relative to the application directory. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
 	public void setKeyStore(String keyStore) {
-		this.keyStore = keyStore;
+		if (!("".equals(keyStore))) {
+			this.keyStore = getAbsolutePath(keyStore);
+		}
 	}
 
 	public String getKeyStore() {
@@ -882,7 +892,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 	@Parameter(name = "keyStorePassword", optional = true, 
 			description = "This parameter specifies the password for the keyStore given by the **keyStore** parameter. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
 	public void setKeyStorePassword(String keyStorePassword) {
-		this.keyStorePassword = keyStorePassword;
+		if (!("".equals(keyStorePassword))) {
+			this.keyStorePassword = keyStorePassword;
+		}
 	}
 
 	public String getKeyStorePassword() {
@@ -893,7 +905,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 	@Parameter(name = "trustStore", optional = true, 
 			description = "This optional parameter specifies the path to the trustStore. If a relative path is specified, the path is relative to the application directory. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
 	public void setTrustStore(String trustStore) {
-		this.trustStore = trustStore;
+		if (!("".equals(trustStore))) {
+			this.trustStore = getAbsolutePath(trustStore);
+		}
 	}
 
 	public String getTrustStore() {
@@ -904,13 +918,52 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 	@Parameter(name = "trustStorePassword", optional = true, 
 			description = "This parameter specifies the password for the trustStore given by the **trustStore** parameter. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
 	public void setTrustStorePassword(String trustStorePassword) {
-		this.trustStorePassword = trustStorePassword;
+		if (!("".equals(trustStorePassword))) {
+			this.trustStorePassword = trustStorePassword;
+		}
 	}
 
 	public String getTrustStorePassword() {
 		return trustStorePassword;
-	}    
+	}
+	
+	// Parameter pluginName
+	@Parameter(name = "pluginName", optional = true, 
+			description = "This parameter specifies the plug-in name. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
+	public void setPluginName(String pluginName) {
+		if (!("".equals(pluginName))) {
+			this.pluginName = pluginName;
+		}
+	}
+
+	public String getPluginName() {
+		return pluginName;
+	}
+	
+	//Parameter pluginFlag
+	@Parameter(name = "pluginFlag", optional = true, 
+			description = "This optional parameter specifies whether plug-in is enabled. The default value is `false`. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
+	public void setPluginFlag(boolean pluginFlag) {
+		this.pluginFlag = pluginFlag;
+	}
     
+	public boolean getPluginFlag() {
+		return pluginFlag;
+	}
+    
+	protected String getAbsolutePath(String filePath) {
+		if (filePath == null)
+			return null;
+
+		Path p = Paths.get(filePath);
+		if (p.isAbsolute()) {
+			return filePath;
+		} else {
+			File f = new File(getOperatorContext().getPE().getApplicationDirectory(), filePath);
+			return f.getAbsolutePath();
+		}
+	}	
+	
     /**
      * Get the batch timeout value.
      * 
