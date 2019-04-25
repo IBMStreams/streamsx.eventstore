@@ -34,7 +34,8 @@ object EventStoreSinkImpl {
 		streamSchema: StreamSchema, nullMapString: String,
                 eventStoreUser: String, eventStorePassword: String,
                 partitioningKey: String, primaryKey: String,
-                sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String): EventStoreSinkImpl = {
+                sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String,
+                pluginName: String, pluginFlag: Boolean): EventStoreSinkImpl = {
     log.trace("Initializing the Event Store writer operator")
 
     if( databaseName == null || databaseName.isEmpty() ||
@@ -52,7 +53,8 @@ object EventStoreSinkImpl {
 		connectionString, frontEndConnectionFlag, streamSchema, nullMapString, 
                 eventStoreUser, eventStorePassword,
                 partitioningKey, primaryKey,
-                sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword)
+                sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword,
+                pluginName, pluginFlag)
     } catch { case e: Exception => 
       log.error("Bad connection")
       throw e 
@@ -69,7 +71,8 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
                          streamSchema: StreamSchema,
                          nullMapString: String, eventStoreUser: String, eventStorePassword: String,
                          partitioningKey: String, primaryKey: String,
-                         sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String) {
+                         sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String,
+                         pluginName: String, pluginFlag: Boolean) {
   protected val log = Logger.getLogger("EventStoreSinkImpl")//EventStoreSink.class.getName());
 
   var context: EventContext = null
@@ -180,8 +183,8 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
            ConfigurationReader.setSslTrustStorePassword(trustStorePassword)
            ConfigurationReader.setSslKeyStoreLocation(keyStore)
            ConfigurationReader.setSslKeyStorePassword(keyStorePassword)
-           //ConfigurationReader.setClientPluginName(name: String)
-           //ConfigurationReader.setClientPlugin(pluginFlag: Boolean)
+           ConfigurationReader.setClientPluginName(pluginName)
+           ConfigurationReader.setClientPlugin(pluginFlag)
         }
         else {
            ConfigurationReader.setSSLEnabled("false")

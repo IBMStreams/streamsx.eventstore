@@ -53,6 +53,7 @@ class TestDistributed(unittest.TestCase):
             self.es_password = os.environ['EVENTSTORE_PASSWORD']
         else:
             self.es_password = None
+        self.front_end_connection_flag = False
 
     def setUp(self):
         Tester.setup_distributed(self)
@@ -129,11 +130,11 @@ class TestDistributed(unittest.TestCase):
         # final marker should flush the remaining tuples
         num_expected = 105
         batch_size = 50
+        params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'frontEndConnectionFlag':self.front_end_connection_flag, 'iterations': num_expected}
         if self.es_password and self.es_user is not None:
-            params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'eventStoreUser': self.es_user , 'eventStorePassword': self.es_password, 'batchSize':batch_size, 'iterations': num_expected}
-        else:
-            params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'iterations': num_expected}
-
+            params['eventStoreUser'] = self.es_user
+            params['eventStorePassword'] = self.es_password
+            
         self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", params, '../../samples/EventStoreInsertSample', num_expected, True)
 
     def test_insert_sample_batch_complete(self):
@@ -145,10 +146,10 @@ class TestDistributed(unittest.TestCase):
         # final marker received after last async batch is triggered
         num_expected = 100
         batch_size = 50
+        params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'frontEndConnectionFlag':self.front_end_connection_flag, 'iterations': num_expected}
         if self.es_password and self.es_user is not None:
-            params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'eventStoreUser': self.es_user , 'eventStorePassword': self.es_password, 'batchSize':batch_size, 'iterations': num_expected}
-        else:
-            params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'iterations': num_expected}
+            params['eventStoreUser'] = self.es_user
+            params['eventStorePassword'] = self.es_password
 
         self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", params, '../../samples/EventStoreInsertSample', num_expected, True)
 
@@ -171,7 +172,7 @@ class TestDistributed(unittest.TestCase):
         beacon.val = beacon.output(spltypes.rstring('CR_TEST'))
         beacon.stream.set_consistent(ConsistentRegionConfig.periodic(trigger_period))
         
-        es.insert(beacon.stream, connection=self.connection, database=self.database, table='StreamsCRTable', primary_key='id', front_end_connection_flag=True, user=self.es_user, password=self.es_password)
+        es.insert(beacon.stream, connection=self.connection, database=self.database, table='StreamsCRTable', primary_key='id', front_end_connection_flag=False, user=self.es_user, password=self.es_password)
         
         #self._build_only(name, topo)
 
@@ -200,7 +201,7 @@ class TestDistributed(unittest.TestCase):
         s = self._create_stream(topo)
         result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
         # user-defined parallelism with two channels (two EventStoreSink operators)
-        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', front_end_connection_flag=True, user=self.es_user, password=self.es_password)      
+        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', front_end_connection_flag=self.front_end_connection_flag, user=self.es_user, password=self.es_password)      
         res.print()
 
         #self._build_only('test_insert_udp', topo)
@@ -224,7 +225,7 @@ class TestDistributed(unittest.TestCase):
         self._add_toolkits(topo, None)
         s = self._create_stream(topo)
         result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
-        res = es.insert(s, config='eventstore', table='SampleTable', schema=result_schema, primary_key='id', front_end_connection_flag=True)      
+        res = es.insert(s, config='eventstore', table='SampleTable', schema=result_schema, primary_key='id', front_end_connection_flag=self.front_end_connection_flag)      
         res.print()
 
         #self._build_only('test_insert_udp', topo)
