@@ -17,7 +17,7 @@ IBM Db2 Event Store is an in-memory database designed to rapidly ingest and anal
 * Consistent region support to achieve at-least-once semantic where appropriate
 
 ]]></info:description>
-        <info:version>2.0.0.beta2</info:version>
+        <info:version>2.0.0.beta3</info:version>
         <info:requiredProductVersion>4.3.0.0</info:requiredProductVersion>
     </info:identity>
     <info:dependencies/>

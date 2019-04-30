@@ -495,6 +495,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             StreamSchema streamSchema = streamingInput.getStreamSchema();
 
             if (impl == null) {
+                this.trustStore = getAbsolutePath(this.trustStore);
+                this.keyStore = getAbsolutePath(this.keyStore);
                 if( databaseName == null || databaseName == "" ||
                         tableName == null || tableName == "" ){
                 	tracer.log(TraceLevel.ERROR, "No database or table name was given so we cannot carry out the insert");
@@ -880,7 +882,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 			description = "This optional parameter specifies the path to the keyStore. If a relative path is specified, the path is relative to the application directory. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
 	public void setKeyStore(String keyStore) {
 		if (!("".equals(keyStore))) {
-			this.keyStore = getAbsolutePath(keyStore);
+			this.keyStore = keyStore;
 		}
 	}
 
@@ -906,7 +908,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 			description = "This optional parameter specifies the path to the trustStore. If a relative path is specified, the path is relative to the application directory. The **sslConnection** parameter must be set to `true` for this parameter to have any effect.")
 	public void setTrustStore(String trustStore) {
 		if (!("".equals(trustStore))) {
-			this.trustStore = getAbsolutePath(trustStore);
+			this.trustStore = trustStore;
 		}
 	}
 
