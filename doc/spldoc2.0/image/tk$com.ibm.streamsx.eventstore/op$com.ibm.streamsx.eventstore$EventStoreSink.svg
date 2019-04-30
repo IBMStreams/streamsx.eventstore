@@ -64,17 +64,19 @@
       ><set attributeName="visibility" from="hidden" end="sdt1.mouseout" to="visible" begin="sdt1.mouseover"
     /></g
     ><g visibility="hidden" style="stroke:none;font-style:italic;font-size:12px;font-family:&apos;Helvetica&apos;,&apos;SansSerif&apos;;"
-    ><rect x="47.65" y="30.0" width="393.13998" style="fill:rgb(230,230,255);stroke:rgb(0,0,80);" rx="2.0" ry="2.0" height="77.0"
-      /><text x="48.65" y="43.0"
-      >Required: connectionString, databaseName, tableName / </text
+    ><rect x="47.65" y="15.0" width="468.39996" style="fill:rgb(230,230,255);stroke:rgb(0,0,80);" rx="2.0" ry="2.0" height="92.0"
+      /><text x="48.65" y="28.0"
+      >Required: tableName / Optional: batchSize, </text
+      ><text x="48.65" y="43.0"
+      >configObject, connectionString, databaseName, eventStorePassword, </text
       ><text x="48.65" y="58.0"
-      >Optional: batchSize, configObject, eventStorePassword, </text
+      >eventStoreUser, keyStore, keyStorePassword, maxNumActiveBatches, </text
       ><text x="48.65" y="73.0"
-      >eventStoreUser, maxNumActiveBatches, nullMapString, </text
+      >nullMapString, partitioningKey, pluginFlag, pluginName, </text
       ><text x="48.65" y="88.0"
-      >partitioningKey, preserveOrder, primaryKey, schemaName, </text
+      >preserveOrder, primaryKey, schemaName, sslConnection, </text
       ><text x="48.65" y="103.0"
-      >frontEndConnectionFlag</text
+      >trustStore, trustStorePassword, frontEndConnectionFlag</text
       ><set attributeName="visibility" from="hidden" end="sdt2.mouseout" to="visible" begin="sdt2.mouseover"
     /></g
     ><g visibility="hidden" style="stroke:none;font-style:italic;font-size:12px;font-family:&apos;Helvetica&apos;,&apos;SansSerif&apos;;"
