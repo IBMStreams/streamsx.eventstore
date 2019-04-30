@@ -179,15 +179,25 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
 
         if (sslConnection) {
            ConfigurationReader.setSSLEnabled("true")
-           ConfigurationReader.setSslTrustStoreLocation(trustStore)
-           ConfigurationReader.setSslTrustStorePassword(trustStorePassword)
-           ConfigurationReader.setSslKeyStoreLocation(keyStore)
-           ConfigurationReader.setSslKeyStorePassword(keyStorePassword)
+        }
+        
+        if (pluginName != null) {
            ConfigurationReader.setClientPluginName(pluginName)
+        }
+        if (pluginFlag) {
            ConfigurationReader.setClientPlugin(pluginFlag)
         }
-        else {
-           ConfigurationReader.setSSLEnabled("false")
+        if (trustStore != null) {
+           ConfigurationReader.setSslTrustStoreLocation(trustStore)
+        }
+        if (trustStorePassword != null) {
+           ConfigurationReader.setSslTrustStorePassword(trustStorePassword)
+        }
+        if (keyStore != null) {
+           ConfigurationReader.setSslKeyStoreLocation(keyStore)
+        }
+        if (keyStorePassword != null) {
+           ConfigurationReader.setSslKeyStorePassword(keyStorePassword)
         }
 
         context = EventContext.getEventContext(databaseName)
