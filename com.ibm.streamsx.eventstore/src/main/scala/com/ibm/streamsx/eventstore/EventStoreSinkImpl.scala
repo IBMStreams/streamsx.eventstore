@@ -144,19 +144,22 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
 
   // This routine is used to connect or reconnect to the DB
   def connectToDatabase(initialConnect: Boolean) : Unit = {
+     log.info( "connectToDatabase " + databaseName)
      if( initialConnect ){
         // Determine if we need to setup the zookeeper connection string using an API
         if( connectionString != null ){
+            log.info( "setConnectionEndpoints: " + connectionString)
             ConfigurationReader.setConnectionEndpoints(connectionString)
         }
 
         if( schemaName != null ){
+            log.info( "setEventSchemaName: " + schemaName)
             ConfigurationReader.setEventSchemaName(schemaName)
         }
 
         if( frontEndConnectionFlag ){
             try {
-              // comment out for Developer Edition 1.1.4
+              log.info( "setUseFrontendConnectionEndpoints: " + frontEndConnectionFlag)
               ConfigurationReader.setUseFrontendConnectionEndpoints(frontEndConnectionFlag)
             } catch {
                case e: Exception => {
@@ -167,51 +170,65 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
 
         // Determine if we need to setup EventStore user string using an API
         if (eventStoreUser != null) {
+           log.info( "setEventUser: " + eventStoreUser)
            ConfigurationReader.setEventUser(eventStoreUser)
-           ConfigurationReader.setLegacyEventUser(eventStoreUser)
+           //ConfigurationReader.setLegacyEventUser(eventStoreUser)
         }
 
         // Determine if we need to setup EventStore password string using an API
         if (eventStorePassword != null) {
+           log.info( "setEventPassword: " + eventStorePassword)
            ConfigurationReader.setEventPassword(eventStorePassword)
-           ConfigurationReader.setLegacyEventPassword(eventStorePassword)
+           //ConfigurationReader.setLegacyEventPassword(eventStorePassword)
         }
 
         if (sslConnection) {
+           log.info( "setSSLEnabled: " + "true")
            ConfigurationReader.setSSLEnabled("true")
         }
         
         if (pluginName != null) {
+           log.info( "setClientPluginName: " + pluginName)
            ConfigurationReader.setClientPluginName(pluginName)
         }
         if (pluginFlag) {
+           log.info( "setClientPlugin: " + pluginFlag)
            ConfigurationReader.setClientPlugin(pluginFlag)
         }
         if (trustStore != null) {
+           log.info( "setSslTrustStoreLocation: " + trustStore)
            ConfigurationReader.setSslTrustStoreLocation(trustStore)
         }
         if (trustStorePassword != null) {
+           log.info( "setSslTrustStorePassword: " + trustStorePassword)
            ConfigurationReader.setSslTrustStorePassword(trustStorePassword)
         }
         if (keyStore != null) {
+           log.info( "setSslKeyStoreLocation: " + keyStore)
            ConfigurationReader.setSslKeyStoreLocation(keyStore)
         }
         if (keyStorePassword != null) {
+           log.info( "setSslKeyStorePassword: " + keyStorePassword)
            ConfigurationReader.setSslKeyStorePassword(keyStorePassword)
         }
-
+        log.info( "EventContext.getEventContext: " + databaseName)
         context = EventContext.getEventContext(databaseName)
-        log.info( "Successful connection to the database: " + databaseName)
+        if( context != null ){
+           log.info( "Successful connection to the database: " + databaseName)
+        }
+        else {
+           throw EventStoreWriterException("Error while connecting to database")
+        }
      }
      
-     val dberror = context.openDatabase()
-     if (dberror.isDefined) {
-       log.error("error while opening database: " + dberror.get)
-       throw EventStoreWriterException( "error while opening database: " + dberror.get,
-		new Exception)
-     } else {
-       log.info("database opened successfully")
-     }
+     //val dberror = context.openDatabase()
+     //if (dberror.isDefined) {
+     //  log.error("error while opening database: " + dberror.get)
+     //  throw EventStoreWriterException( "error while opening database: " + dberror.get,
+     //		new Exception)
+     //} else {
+     //  log.info("database opened successfully")
+     //}
   }
 
   // Obtain a null mapping from column name to the value that represents null
