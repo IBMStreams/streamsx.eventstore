@@ -54,3 +54,7 @@ configure:
 	-streamtool rmappconfig --noprompt eventstore
 	streamtool mkappconfig --property databaseName=$(EVENTSTORE_DB) --property connectionString="$(EVENTSTORE_CONNECTION)" --property eventStoreUser=$(EVENTSTORE_USER) --property eventStorePassword=$(EVENTSTORE_PASSWORD) eventstore
 
+configure-store:
+	-streamtool rmappconfig --noprompt eventstore
+	streamtool mkappconfig --property databaseName=$(EVENTSTORE_DB) --property connectionString="$(EVENTSTORE_CONNECTION)" --property eventStoreUser=$(EVENTSTORE_USER) --property eventStorePassword=$(EVENTSTORE_PASSWORD) --property trustStorePassword=$(EVENTSTORE_TRUSTSTORE_PASSWORD) --property keyStorePassword=$(EVENTSTORE_KEYSTORE_PASSWORD) eventstore
+

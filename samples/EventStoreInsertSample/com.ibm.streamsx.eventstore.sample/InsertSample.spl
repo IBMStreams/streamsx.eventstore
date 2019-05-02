@@ -58,8 +58,8 @@ public composite InsertSample {
 		expression<rstring> $databaseName : getSubmissionTimeValue("databaseName", "EVENTDB");
 		expression<rstring> $tableName : getSubmissionTimeValue("tableName", "SimpleTab");
 		expression<rstring> $schemaName : getSubmissionTimeValue("schemaName", ""); // empty uses default
-		expression<rstring> $eventStoreUser : getSubmissionTimeValue("eventStoreUser", ""); // empty uses default
-		expression<rstring> $eventStorePassword : getSubmissionTimeValue("eventStorePassword", ""); // empty uses default
+		expression<rstring> $eventStoreUser : getSubmissionTimeValue("eventStoreUser", "");
+		expression<rstring> $eventStorePassword : getSubmissionTimeValue("eventStorePassword", "");
 		expression<rstring> $configObject : getSubmissionTimeValue("configObject", ""); // empty not used
 		expression<boolean> $frontEndConnectionFlag : (boolean)getSubmissionTimeValue("frontEndConnectionFlag", "false");
 		expression<boolean> $sslConnection : (boolean)getSubmissionTimeValue("sslConnection", "false");
@@ -67,9 +67,6 @@ public composite InsertSample {
 		expression<rstring> $keyStorePassword: getSubmissionTimeValue("keyStorePassword", ""); // empty not used
 		expression<rstring> $trustStore: getSubmissionTimeValue("trustStore", ""); // empty not used
 		expression<rstring> $trustStorePassword: getSubmissionTimeValue("trustStorePassword", ""); // empty not used
-		expression<boolean> $pluginFlag : (boolean)getSubmissionTimeValue("pluginFlag", "false");
-		expression<rstring> $pluginName: getSubmissionTimeValue("pluginName", ""); // empty not used
-
 
 	graph
 
@@ -89,8 +86,6 @@ public composite InsertSample {
 				keyStorePassword: $keyStorePassword;
 				trustStore: $trustStore;
 				trustStorePassword: $trustStorePassword;
-				pluginFlag: $pluginFlag;
-				pluginName: $pluginName;
 		}	
 }
 
@@ -161,8 +156,6 @@ public composite InsertSampleComp (output SampleResult) {
 		expression<rstring> $keyStorePassword: ""; // empty not used
 		expression<rstring> $trustStore: ""; // empty not used
 		expression<rstring> $trustStorePassword: ""; // empty not used
-		expression<boolean> $pluginFlag: false;
-		expression<rstring> $pluginName: ""; // empty not used
 		expression<int32>   $iterations: 100;
 
 	type
@@ -197,8 +190,9 @@ public composite InsertSampleComp (output SampleResult) {
 				keyStorePassword: $keyStorePassword;
 				trustStore: $trustStore;
 				trustStorePassword: $trustStorePassword;
-				pluginFlag: $pluginFlag;
-				pluginName: $pluginName;
+				//pluginFlag: true;
+				//pluginName: "IBMPrivateCloudAuth";
+				//vmArg: "-Djavax.net.ssl.keyStoreType=PKCS12";
 		}
 
 		stream<rstring result> SampleResult = Custom(InsertResults as I)  {
