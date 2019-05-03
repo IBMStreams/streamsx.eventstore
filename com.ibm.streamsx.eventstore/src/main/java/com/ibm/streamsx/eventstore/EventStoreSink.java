@@ -23,22 +23,14 @@
 /* end_generated_IBM_copyright_prolog                               */
 package com.ibm.streamsx.eventstore;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ArrayList;
-import java.util.Queue;
-import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.spark.sql.catalyst.expressions.GenericRow;
-import org.apache.spark.sql.Row;
 
 import com.ibm.streams.operator.AbstractOperator;
 import com.ibm.streams.operator.OperatorContext;
@@ -65,15 +57,17 @@ import com.ibm.streams.operator.state.CheckpointContext;
 import com.ibm.streams.operator.state.ConsistentRegionContext;
 import com.ibm.streams.operator.state.StateHandler;
 import com.ibm.streams.operator.log4j.TraceLevel;
+import com.ibm.streams.operator.model.Libraries;
 
 import com.ibm.streamsx.eventstore.EventStoreSinkImpl;
 //import com.ibm.streamsx.eventstore.EventStoreSinkJImplObject;
 //import com.ibm.streamsx.eventstore.EventStoreSinkJImpl;
 import org.apache.log4j.Logger;
-import scala.collection.JavaConversions;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * IBM Db2 Event Store streams sink operator class 
@@ -114,7 +108,7 @@ EventStoreSink.SPL_EXAMPLES_DESC
 @OutputPorts({
     @OutputPortSet(description=EventStoreSink.oport0Description, cardinality=1, optional=true)
 })
-
+@Libraries({"opt/*","opt/downloaded/*" })
 public class EventStoreSink extends AbstractOperator implements StateHandler {
     /* begin_generated_IBM_copyright_code */
     public static final String IBM_COPYRIGHT = 
@@ -125,10 +119,11 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
     private static Logger tracer = Logger.getLogger(EventStoreSink.class.getName());
 
-    EventStoreSinkImpl/* EventStoreSinkJImpl*/ impl = null;
-
+    EventStoreSinkImpl/* EventStoreSinkJImpl*/ impl = null;    
+    
     String databaseName = null;
     String tableName = null;
+    String schemaName = null;
     String connectionString = null;
     boolean frontEndConnectionFlag = false;
     String eventStoreUser = null;
@@ -138,6 +133,15 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private String cfgObjectName = "";
     private Map<String, String> cfgMap;
 
+ 	// SSL parameters
+ 	private String keyStore;
+ 	private String trustStore;
+ 	private String keyStorePassword;
+ 	private String trustStorePassword;
+ 	private boolean sslConnection = false;
+ 	private String pluginName = "IBMPrivateCloudAuth";
+ 	private boolean pluginFlag = true;
+    
     // Flag to specify if the optional tuple insert result port is used
     private boolean hasResultsPort = false;
     // Variable to specify tuple insert result output port
@@ -435,13 +439,13 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             resultsOutputPort = getOutput(0);
         }
 
-        //Obtain the configuration inforamtion using the configuration name
+        //Obtain the configuration information using the configuration name
         if( cfgObjectName != null && cfgObjectName != "" ){
             cfgMap = context.getPE().getApplicationConfiguration(cfgObjectName);
-            if (tracer.isInfoEnabled()) {
-            	tracer.log(TraceLevel.INFO, "Found application configuration object");
-            }
             if( cfgMap.size() > 0 ){
+                if (tracer.isInfoEnabled()) {
+                	tracer.log(TraceLevel.INFO, "Found application configuration object");
+                }            	
                 // Override input parameters
                 // Check if we have a eventStoreUser
                 if( cfgMap.containsKey("eventStoreUser") ){
@@ -450,20 +454,55 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     	tracer.log(TraceLevel.INFO, "Config override eventStoreUser = " + eventStoreUser);
                     }
                 }
-
                 if( cfgMap.containsKey("eventStorePassword") ){
                     eventStorePassword = cfgMap.get("eventStorePassword");
                     if (tracer.isInfoEnabled()) {
                     	tracer.log(TraceLevel.INFO, "Config override eventStorePassword = *****");
                     }
                 }
-
+                if( cfgMap.containsKey("connectionString") ){
+                	connectionString = cfgMap.get("connectionString");
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override connectionString  = " + connectionString);
+                    }
+                }
+                if( cfgMap.containsKey("databaseName") ){
+                	databaseName = cfgMap.get("databaseName");
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override databaseName  = " + databaseName);
+                    }
+                }
+                if( cfgMap.containsKey("keyStorePassword") ){
+                	keyStorePassword = cfgMap.get("keyStorePassword");
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override keyStorePassword  = " + keyStorePassword);
+                    }
+                }
+                if( cfgMap.containsKey("trustStorePassword") ){
+                	trustStorePassword = cfgMap.get("trustStorePassword");
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override trustStorePassword  = " + trustStorePassword);
+                    }
+                }
+                if( cfgMap.containsKey("pluginName") ){
+                	pluginName = cfgMap.get("pluginName");
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override pluginName  = " + pluginName);
+                    }
+                }
             }
+            else  {
+            	tracer.log(TraceLevel.WARN, "Application configuration object is configured, but no valid properties found: " + cfgObjectName);
+            } 
         }
         if (tracer.isInfoEnabled()) {
+        	tracer.log(TraceLevel.INFO, "Connect to DB " + databaseName + " with " + connectionString);
         	tracer.log(TraceLevel.INFO, "Resulting eventStoreUser = " + eventStoreUser +
                 " and passwd = *****"); // + eventStorePassword);
         	tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
+        	tracer.log(TraceLevel.INFO, "frontEndConnectionFlag: " + this.frontEndConnectionFlag);
+        	tracer.log(TraceLevel.INFO, "pluginFlag: " + this.pluginFlag);
+        	tracer.log(TraceLevel.INFO, "pluginName: " + this.pluginName);
         }
 
         // Set up connection to the IBM Db2 Event Store engine
@@ -472,23 +511,33 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             StreamSchema streamSchema = streamingInput.getStreamSchema();
 
             if (impl == null) {
+                this.trustStore = getAbsolutePath(this.trustStore);
+                this.keyStore = getAbsolutePath(this.keyStore);
+                if (null != this.keyStore) {
+                	tracer.log(TraceLevel.INFO, "System.setProperty: javax.net.ssl.keyStoreType=PKCS12");
+                    System.setProperty("javax.net.ssl.keyStoreType", "PKCS12");
+                }
                 if( databaseName == null || databaseName == "" ||
                         tableName == null || tableName == "" ){
                 	tracer.log(TraceLevel.ERROR, "No database or table name was given so we cannot carry out the insert");
-                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName,
+                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
-                            partitioningKey, primaryKey);
+                            partitioningKey, primaryKey,
+                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword, 
+                            pluginName, pluginFlag);
                 }
                 else{
                 	if (tracer.isInfoEnabled()) {
                 		tracer.log(TraceLevel.INFO, "databaseName= " + databaseName +
                             " tabename= " + tableName );
                 	}
-                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName,
+                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
                             connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
                             eventStoreUser, eventStorePassword,
-                            partitioningKey, primaryKey);
+                            partitioningKey, primaryKey,
+                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword,
+                            pluginName, pluginFlag);
                 }
             }
             // If the batch size if not provided calculate the default batchSize
@@ -510,8 +559,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private LinkedList</*Row*/Tuple> newBatch() {
         return new LinkedList</*Row*/Tuple>();
     }
-
-    private Future<Object> activeTimeout;
 
     /**
      *      * Notification that initialization is complete and all input and output ports 
@@ -582,7 +629,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      * Process any final punctuation by flushing the batch
      * and waiting for all the work to complete.
      */
-    @SuppressWarnings("incomplete-switch")
     public void processPunctuation(StreamingInput<Tuple> port, Punctuation mark)
           throws Exception {
         // No need to call super.processPunctuation because that just forwards
@@ -627,106 +673,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     }
     
     /**
-     * Set of the background tasks that have been kicked off
-     * for batch processing (calling processBatch()).
-     * 
-     */
-    private final Set<Future<?>> activeBatches = new HashSet<Future<?>>();
-    
-    /**
-     * Test to see if all the batches are complete.
-     */
-    private synchronized boolean batchesComplete() {
-        boolean allComplete = true;
-        for (Iterator<Future<?>> i = activeBatches.iterator(); i.hasNext(); )
-        {
-            Future<?> batch = i.next();
-            if (batch.isDone())
-                i.remove();
-            else
-                allComplete = false;
-        }
-        return allComplete;
-    }
-    
-    /**
-     * Wait for any outstanding batch item.
-     */
-    private void batchWait() {
-        Future<?> waitBatch = null;
-        
-        synchronized (this) {
-            for (Iterator<Future<?>> i = activeBatches.iterator(); i.hasNext();) {
-                Future<?> batch = i.next();
-                if (!batch.isDone())
-                {
-                    waitBatch = batch;
-                    break;
-                }
-            }
-        }
-        if (waitBatch != null)
-            try {
-                waitBatch.get();
-            } catch (InterruptedException e) {
-                ;
-            } catch (ExecutionException e) {
-                ;
-            }
-    }
-    
-
-    /**
-     * Submit a batch of tuples to be processed by the sub-classes processBatch
-     * using a asynchronous task.
-     * @param submitter True if this is being called from a task that itself was
-     * created by submitBatch.
-     */
-    private /*synchronized*/ void submitBatch(boolean submitter) throws Exception {
-        // We are processing so remove any existing timeout
-        /*if (activeTimeout != null) {
-            activeTimeout.cancel(false);
-            activeTimeout = null;
-        }*/
-        // Async threads may mean this is called just after
-        // another submit batch so if nothing to do, just complete.
-        synchronized (this) {
-            //boolean allComplete = batchesComplete();
-        	if (tracer.isInfoEnabled()) {
-        		tracer.log(TraceLevel.INFO, "The number of activebatches in submitbatch = " + activeBatches.size());
-        	}
-            // Limit the number of outstanding tasks.
-            if (/*!submitter && !allComplete &&*/ activeBatches.size() >= 1){ //maxNumActiveBatches) {
-                tracer.log(TraceLevel.ERROR, "Inside submitBatch too many batch processes");
-                return;
-            }
-        }
-
-        activeBatches.add(getOperatorContext().getScheduledExecutorService()
-                .submit(new Callable<Object>() {
-                    public Object call() throws Exception {
-                        while(!shutdown ) {
-                                LinkedList</*Row*/Tuple> asyncBatch = batchQueue.take();
-                                if( asyncBatch == null ){
-                                    continue;
-                                }
-
-                                if (tracer.isDebugEnabled()) {
-                                	tracer.log(TraceLevel.DEBUG, "Found a non-empty batch so call insert from submitbatch");
-                                }
-                                boolean addLeftovers = processBatch(asyncBatch);
-
-                                if (tracer.isDebugEnabled()) {
-                                	tracer.log(TraceLevel.DEBUG, "In submitBatch call after processbatch with addLeftovers = " + addLeftovers);
-                                }
-
-                        }
-                        return null;
-                    }
-                }));
-    }
-
-    /**
      * Shutdown this operator.
      * @throws Exception Operator failure, will cause the enclosing PE to terminate.
      */
@@ -759,11 +705,19 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         return batchSize;
     }
 
-    @Parameter(name="databaseName", description = "The name of an existing IBM Db2 Event Store database in order to connect")
+    @Parameter(name="databaseName", optional=true, description = "The name of an existing IBM Db2 Event Store database in order to connect.")
     public void setDatabaseName(String s) {databaseName = s;}
 
     @Parameter(name="tableName", description = "The name of the table into which you want to insert data from the IBM Streams application. If the table does not exist, the table is automatically created in IBM Db2 Event Store.")
     public void setTableName(String s) {tableName = s;}
+
+    @Parameter(name="schemaName",  optional=true,
+               description = "The name of the table schema name of the table into which to insert data. If not used the default will be the user id.")
+    public void setSchemaName(String s) {
+    	if (!("".equals(s))) {
+    		schemaName = s;
+    	}
+    }
 
     private String stringifyStackTrace(Exception e) {
         StringWriter sw = new StringWriter();
@@ -774,10 +728,10 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     /**
      * Set the IBM Db2 Event Store connection string
      * @param connectionString
-     *            If null then the code will use a Event Store config file to connect
+     *            If null then the connectString must be set in application configuration
      */
-    @Parameter(name="connectionString", 
-            description="Specifies the IBM Db2 Event Store connection endpoint as a set of IP addresses and ports: <IP>:<port>. Separate multiple entries with a comma.")
+    @Parameter(name="connectionString", optional=true,
+            description="Specifies the IBM Db2 Event Store connection endpoint as a set of IP addresses and ports: <IP>:<jdbc-port>;<IP>:<port>. Separate multiple entries with a comma.")
     public synchronized void setConnectionString( String connectString ) {
         connectionString = connectString;
     }
@@ -792,7 +746,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      *            Unit of the timeout value
      */
     @Parameter(name="frontEndConnectionFlag", optional=true,
-            description="Set to true to connect through a Secure Gateway for Event Store Enterprise Edition version >= 1.1.2 and Developer Edition version > 1.1.4")
+            description="Set to true to connect through a Secure Gateway for Event Store")
     public synchronized void setUseFrontendConnectionEndpoints(boolean frontEndConnectionFlag ) {
         this.frontEndConnectionFlag = frontEndConnectionFlag;
     }
@@ -866,14 +820,18 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      * Set the configObject which is the name of the IBM Streams configuration object that
      * will contain parameter settings that will override user parameter
      * settings and is used to hide security related information such
-     * as eventStoreUser and eventStorePassword
+     * as eventStoreUser and eventStorePassword and connectionString, databaseName
      * 
      * @param configObject
      */
 
     @Parameter(name = "configObject", optional=true, 
-               description = "Specify the application configuration name. An application configuration can be created in the Streams Console or using the `streamtool mkappconfig ... <configObject name>`. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: `eventStoreUser` and `eventStorePassword`")
-    public void setConfigObject(String s) { cfgObjectName = s; }
+               description = "Specify the application configuration name. An application configuration can be created in the Streams Console or using the `streamtool mkappconfig ... <configObject name>`. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: `connectionString`, `databaseName`, `eventStoreUser`, `eventStorePassword`, `keyStorePassword`, `trustStorePassword`, `pluginName`")
+    public void setConfigObject(String s) { 
+    	if (!("".equals(s))) {
+    		cfgObjectName = s;
+    	}
+    }
 
     /**
      * Set the Userid information which will be null or a string
@@ -927,6 +885,108 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 		description = "Primary key for the table. A string of attribute names separated by commas. The order of the attribute names defines the order of entries in the primary key for the IBM Db2 Event Store table. The attribute names are the names of the fields in the stream. The `primaryKey` parameter is used only, if the table does not yet exist in the IBM Db2 Event Store database. If you do not specify this parameter, the resulting table has an empty primary key.")
     public void setPrimaryKey(String s) {primaryKey = s;}
 
+    
+	/*
+	@Parameter(name = "sslConnection", optional = true, 
+			description = "This optional parameter specifies whether an SSL connection should be made to the database. When set to `true`, the **keyStore**, **keyStorePassword**, **trustStore** and **trustStorePassword** parameters can be used to specify the locations and passwords of the keyStore and trustStore. The default value is `false`.")
+	public void setSslConnection(boolean sslConnection) {
+		this.sslConnection = sslConnection;
+	}
+    
+	public boolean isSslConnection() {
+		return sslConnection;
+	}
+	*/
+
+	// Parameter keyStore
+	@Parameter(name = "keyStore" , optional = true, 
+			description = "This parameter specifies the path to the keyStore file for the SSL connection. If a relative path is specified, the path is relative to the application directory.")
+	public void setKeyStore(String keyStore) {
+		if (!("".equals(keyStore))) {
+			this.keyStore = keyStore;
+		}
+	}
+
+	public String getKeyStore() {
+		return keyStore;
+	}
+
+	// Parameter keyStorePassword
+	@Parameter(name = "keyStorePassword", optional = true, 
+			description = "This parameter specifies the password for the keyStore given by the **keyStore** parameter.")
+	public void setKeyStorePassword(String keyStorePassword) {
+		if (!("".equals(keyStorePassword))) {
+			this.keyStorePassword = keyStorePassword;
+		}
+	}
+
+	public String getKeyStorePassword() {
+		return keyStorePassword;
+	}
+
+	// Parameter trustStore
+	@Parameter(name = "trustStore", optional = true, 
+			description = "This parameter specifies the path to the trustStore file for the SSL connection. If a relative path is specified, the path is relative to the application directory.")
+	public void setTrustStore(String trustStore) {
+		if (!("".equals(trustStore))) {
+			this.trustStore = trustStore;
+		}
+	}
+
+	public String getTrustStore() {
+		return trustStore;
+	}
+
+	// Parameter trustStorePassword
+	@Parameter(name = "trustStorePassword", optional = true, 
+			description = "This parameter specifies the password for the trustStore given by the **trustStore** parameter.")
+	public void setTrustStorePassword(String trustStorePassword) {
+		if (!("".equals(trustStorePassword))) {
+			this.trustStorePassword = trustStorePassword;
+		}
+	}
+
+	public String getTrustStorePassword() {
+		return trustStorePassword;
+	}
+	
+	// Parameter pluginName
+	@Parameter(name = "pluginName", optional = true, 
+			description = "This parameter specifies the plug-in name for the SSL connection. The default value is `IBMPrivateCloudAuth`.")
+	public void setPluginName(String pluginName) {
+		if (!("".equals(pluginName))) {
+			this.pluginName = pluginName;
+		}
+	}
+
+	public String getPluginName() {
+		return pluginName;
+	}
+	
+	//Parameter pluginFlag
+	@Parameter(name = "pluginFlag", optional = true, 
+			description = "This parameter specifies whether plug-in is enabled for the SSL connection. The default value is `true`.")
+	public void setPluginFlag(boolean pluginFlag) {
+		this.pluginFlag = pluginFlag;
+	}
+    
+	public boolean getPluginFlag() {
+		return pluginFlag;
+	}
+    
+	protected String getAbsolutePath(String filePath) {
+		if (filePath == null)
+			return null;
+
+		Path p = Paths.get(filePath);
+		if (p.isAbsolute()) {
+			return filePath;
+		} else {
+			File f = new File(getOperatorContext().getPE().getApplicationDirectory(), filePath);
+			return f.getAbsolutePath();
+		}
+	}	
+	
     /**
      * Get the batch timeout value.
      * 
@@ -1237,6 +1297,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 		    "\\n            expression<int32>   $batchSize: (int32)getSubmissionTimeValue(\\\"batchSize\\\", \\\"1000\\\");"+
 		    "\\n            expression<rstring> $databaseName: getSubmissionTimeValue(\\\"databaseName\\\");"+
 		    "\\n            expression<rstring> $tableName: getSubmissionTimeValue(\\\"tableName\\\");"+
+		    "\\n            expression<rstring> $schemaName: getSubmissionTimeValue(\\\"schemaName\\\");"+
 		    "\\n            expression<rstring> $eventStoreUser: getSubmissionTimeValue(\\\"eventStoreUser\\\", \\\"\\\");"+
 		    "\\n            expression<rstring> $eventStorePassword: getSubmissionTimeValue(\\\"eventStorePassword\\\", \\\"\\\");"+ 
 		    "\\n    "+
@@ -1256,6 +1317,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 			"\\n                    databaseName: $databaseName;"+
 			"\\n                    primaryKey: 'key';"+
 			"\\n                    tableName: $tableName;"+
+			"\\n                    schemaName: $schemaName;"+
 			"\\n                    eventStoreUser: $eventStoreUser;"+
 			"\\n                    eventStorePassword: $eventStorePassword;"+
 			"\\n            }"+

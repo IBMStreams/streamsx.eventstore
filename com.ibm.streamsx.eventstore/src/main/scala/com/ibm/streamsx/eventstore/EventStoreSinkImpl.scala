@@ -28,12 +28,14 @@ object EventStoreSinkImpl {
   private val log = Logger.getLogger("EventStoreSinkImpl")//EventStoreSink.class.getName());
 
   // refactor to split up the zk stuff and EventStore stuff for 6-lining
-  def mkWriter(databaseName : String, tableName: String, 
+  def mkWriter(databaseName : String, tableName: String, schemaName: String,
 		connectionString: String,
                 frontEndConnectionFlag : Boolean,
 		streamSchema: StreamSchema, nullMapString: String,
                 eventStoreUser: String, eventStorePassword: String,
-                partitioningKey: String, primaryKey: String): EventStoreSinkImpl = {
+                partitioningKey: String, primaryKey: String,
+                sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String,
+                pluginName: String, pluginFlag: Boolean): EventStoreSinkImpl = {
     log.trace("Initializing the Event Store writer operator")
 
     if( databaseName == null || databaseName.isEmpty() ||
@@ -44,12 +46,15 @@ object EventStoreSinkImpl {
     }
 
     try {
+      log.trace( "CONNECTION info ****** connectionString= " + connectionString)
       log.trace( "CONNECTION info ****** databaseName= " + databaseName +
 	" tablename= " + tableName )
-      new EventStoreSinkImpl(databaseName, tableName,
+      new EventStoreSinkImpl(databaseName, tableName, schemaName,
 		connectionString, frontEndConnectionFlag, streamSchema, nullMapString, 
                 eventStoreUser, eventStorePassword,
-                partitioningKey, primaryKey)
+                partitioningKey, primaryKey,
+                sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword,
+                pluginName, pluginFlag)
     } catch { case e: Exception => 
       log.error("Bad connection")
       throw e 
@@ -60,12 +65,14 @@ object EventStoreSinkImpl {
 /* This class is used to connect to IBM Db2 Event Store, create a table if none
  * exists, and insert batches of rows using the Event Store client APIs from the EventContext class.
  */
-class EventStoreSinkImpl(databaseName : String, tableName: String,
+class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: String,
                          connectionString: String, 
                          frontEndConnectionFlag: Boolean, 
                          streamSchema: StreamSchema,
                          nullMapString: String, eventStoreUser: String, eventStorePassword: String,
-                         partitioningKey: String, primaryKey: String) {
+                         partitioningKey: String, primaryKey: String,
+                         sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String,
+                         pluginName: String, pluginFlag: Boolean) {
   protected val log = Logger.getLogger("EventStoreSinkImpl")//EventStoreSink.class.getName());
 
   var context: EventContext = null
@@ -137,16 +144,23 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
 
   // This routine is used to connect or reconnect to the DB
   def connectToDatabase(initialConnect: Boolean) : Unit = {
+     log.info( "connectToDatabase " + databaseName)
      if( initialConnect ){
         // Determine if we need to setup the zookeeper connection string using an API
         if( connectionString != null ){
+            log.info( "setConnectionEndpoints: " + connectionString)
             ConfigurationReader.setConnectionEndpoints(connectionString)
+        }
+
+        if( schemaName != null ){
+            log.info( "setEventSchemaName: " + schemaName)
+            ConfigurationReader.setEventSchemaName(schemaName)
         }
 
         if( frontEndConnectionFlag ){
             try {
-              // comment for Developer Edition 1.1.4
-              //ConfigurationReader.setUseFrontendConnectionEndpoints(frontEndConnectionFlag)
+              log.info( "setUseFrontendConnectionEndpoints: " + frontEndConnectionFlag)
+              ConfigurationReader.setUseFrontendConnectionEndpoints(frontEndConnectionFlag)
             } catch {
                case e: Exception => {
                   log.error( "Could not set ConfigurationReader.setUseFrontendConnectionEndpoints likely due to incorrect Event Store version" )
@@ -156,26 +170,65 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
 
         // Determine if we need to setup EventStore user string using an API
         if (eventStoreUser != null) {
+           log.info( "setEventUser: " + eventStoreUser)
            ConfigurationReader.setEventUser(eventStoreUser)
+           //ConfigurationReader.setLegacyEventUser(eventStoreUser)
         }
 
         // Determine if we need to setup EventStore password string using an API
         if (eventStorePassword != null) {
+           log.info( "setEventPassword: " + eventStorePassword)
            ConfigurationReader.setEventPassword(eventStorePassword)
+           //ConfigurationReader.setLegacyEventPassword(eventStorePassword)
         }
 
+        if (sslConnection) {
+           log.info( "setSSLEnabled: " + "true")
+           ConfigurationReader.setSSLEnabled("true")
+        }
+        
+        if (pluginName != null) {
+           log.info( "setClientPluginName: " + pluginName)
+           ConfigurationReader.setClientPluginName(pluginName)
+        }
+        if (pluginFlag) {
+           log.info( "setClientPlugin: " + pluginFlag)
+           ConfigurationReader.setClientPlugin(pluginFlag)
+        }
+        if (trustStore != null) {
+           log.info( "setSslTrustStoreLocation: " + trustStore)
+           ConfigurationReader.setSslTrustStoreLocation(trustStore)
+        }
+        if (trustStorePassword != null) {
+           log.info( "setSslTrustStorePassword: " + trustStorePassword)
+           ConfigurationReader.setSslTrustStorePassword(trustStorePassword)
+        }
+        if (keyStore != null) {
+           log.info( "setSslKeyStoreLocation: " + keyStore)
+           ConfigurationReader.setSslKeyStoreLocation(keyStore)
+        }
+        if (keyStorePassword != null) {
+           log.info( "setSslKeyStorePassword: " + keyStorePassword)
+           ConfigurationReader.setSslKeyStorePassword(keyStorePassword)
+        }
+        log.info( "EventContext.getEventContext: " + databaseName)
         context = EventContext.getEventContext(databaseName)
-        log.info( "Successful connection to the database: " + databaseName)
+        if( context != null ){
+           log.info( "Successful connection to the database: " + databaseName)
+        }
+        else {
+           throw EventStoreWriterException("Error while connecting to database")
+        }
      }
      
-     val dberror = context.openDatabase()
-     if (dberror.isDefined) {
-       log.error("error while opening database: " + dberror.get)
-       throw EventStoreWriterException( "error while opening database: " + dberror.get,
-		new Exception)
-     } else {
-       log.info("database opened successfully")
-     }
+     //val dberror = context.openDatabase()
+     //if (dberror.isDefined) {
+     //  log.error("error while opening database: " + dberror.get)
+     //  throw EventStoreWriterException( "error while opening database: " + dberror.get,
+     //		new Exception)
+     //} else {
+     //  log.info("database opened successfully")
+     //}
   }
 
   // Obtain a null mapping from column name to the value that represents null
@@ -260,7 +313,7 @@ class EventStoreSinkImpl(databaseName : String, tableName: String,
       // for converting it to a EventStore schema
       val fields = (0 until streamSchema.getAttributeCount).
         map(i => streamSchema.getAttribute(i)).map(
-        attr => StructField(attr.getName, convertStreamType(attr.getType), true)).toSeq
+        attr => StructField(attr.getName, convertStreamType(attr.getType), false)).toSeq
       log.info( "NEW FIELDS = " + fields )
       val newStruct = StructType(fields)
       log.info( "New schema for table " + tableName + " is : " + newStruct)
@@ -585,7 +638,7 @@ object ConversionAPIObject {
       // for converting it to a EventStore schema
       val fields = (0 until streamSchema.getAttributeCount).
         map(i => streamSchema.getAttribute(i)).map(
-        attr => StructField(attr.getName, convertStreamType(attr.getType), true)).toSeq
+        attr => StructField(attr.getName, convertStreamType(attr.getType), false)).toSeq
       log.info( "NEW FIELDS = " + fields )
       val newStruct = StructType(fields)
       log.info( "New schema for table " + tableName + " is : " + newStruct)
