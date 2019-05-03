@@ -35,9 +35,6 @@ use com.ibm.streamsx.eventstore::*;
  *
  * @param frontEndConnectionFlag
  * Set to true to connect through a Secure Gateway for Event Store
- *
- * @param sslConnection
- * Set to true to enable SSL connection
  * 
  * @param keyStore
  * Location of key store file. Parameter is ignored if sslConnection is false.
@@ -62,7 +59,6 @@ public composite InsertSample {
 		expression<rstring> $eventStorePassword : getSubmissionTimeValue("eventStorePassword", "");
 		expression<rstring> $configObject : getSubmissionTimeValue("configObject", ""); // empty not used
 		expression<boolean> $frontEndConnectionFlag : (boolean)getSubmissionTimeValue("frontEndConnectionFlag", "false");
-		expression<boolean> $sslConnection : (boolean)getSubmissionTimeValue("sslConnection", "false");
 		expression<rstring> $keyStore: getSubmissionTimeValue("keyStore", ""); // empty not used
 		expression<rstring> $keyStorePassword: getSubmissionTimeValue("keyStorePassword", ""); // empty not used
 		expression<rstring> $trustStore: getSubmissionTimeValue("trustStore", ""); // empty not used
@@ -81,7 +77,6 @@ public composite InsertSample {
 				eventStorePassword: $eventStorePassword;
 				configObject: $configObject;
 				frontEndConnectionFlag: $frontEndConnectionFlag;
-				sslConnection: $sslConnection;
 				keyStore: $keyStore;
 				keyStorePassword: $keyStorePassword;
 				trustStore: $trustStore;
@@ -119,9 +114,6 @@ public composite InsertSample {
  * @param frontEndConnectionFlag
  * Set to true to connect through a Secure Gateway for Event Store
  *
- * @param sslConnection
- * Set to true to enable SSL connection
- *
  * @param keyStore
  * Location of key store file. Parameter is ignored if sslConnection is false.
  *
@@ -151,7 +143,6 @@ public composite InsertSampleComp (output SampleResult) {
 		expression<rstring> $eventStorePassword : ""; // empty uses default
 		expression<rstring> $configObject: "";
 		expression<boolean> $frontEndConnectionFlag: false;
-		expression<boolean> $sslConnection: false;
 		expression<rstring> $keyStore: ""; // empty not used
 		expression<rstring> $keyStorePassword: ""; // empty not used
 		expression<rstring> $trustStore: ""; // empty not used
@@ -185,7 +176,6 @@ public composite InsertSampleComp (output SampleResult) {
 				eventStoreUser: $eventStoreUser;
 				eventStorePassword: $eventStorePassword;
 				frontEndConnectionFlag: $frontEndConnectionFlag;
-				sslConnection: $sslConnection;
 				keyStore: $keyStore;
 				keyStorePassword: $keyStorePassword;
 				trustStore: $trustStore;
