@@ -105,7 +105,7 @@ class TestDistributed(unittest.TestCase):
         test_op = op.Source(topo, composite_name, 'tuple<rstring result>', params=params)
 
         tester = Tester(topo)
-        tester.run_for(400)
+        tester.run_for(120)
         tester.tuple_count(test_op.stream, num_tuples, exact=exact)
 
         cfg = {}
@@ -215,7 +215,7 @@ class TestDistributed(unittest.TestCase):
         trigger_period = 10
         num_expected_tuples = 8000
         num_resets = 2
-        run_for = 200 # in seconds
+        run_for = 120 # in seconds
 
         beacon = op.Source(topo, "spl.utility::Beacon",
             'tuple<int64 id, rstring val>',
