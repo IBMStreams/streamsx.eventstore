@@ -454,28 +454,24 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     	tracer.log(TraceLevel.INFO, "Config override eventStoreUser = " + eventStoreUser);
                     }
                 }
-
                 if( cfgMap.containsKey("eventStorePassword") ){
                     eventStorePassword = cfgMap.get("eventStorePassword");
                     if (tracer.isInfoEnabled()) {
                     	tracer.log(TraceLevel.INFO, "Config override eventStorePassword = *****");
                     }
                 }
-
                 if( cfgMap.containsKey("connectionString") ){
                 	connectionString = cfgMap.get("connectionString");
                     if (tracer.isInfoEnabled()) {
                     	tracer.log(TraceLevel.INFO, "Config override connectionString  = " + connectionString);
                     }
                 }
-                
                 if( cfgMap.containsKey("databaseName") ){
                 	databaseName = cfgMap.get("databaseName");
                     if (tracer.isInfoEnabled()) {
                     	tracer.log(TraceLevel.INFO, "Config override databaseName  = " + databaseName);
                     }
                 }
-                
                 if( cfgMap.containsKey("keyStorePassword") ){
                 	keyStorePassword = cfgMap.get("keyStorePassword");
                     if (tracer.isInfoEnabled()) {
@@ -488,8 +484,12 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     	tracer.log(TraceLevel.INFO, "Config override trustStorePassword  = " + trustStorePassword);
                     }
                 }
-                
-                
+                if( cfgMap.containsKey("pluginName") ){
+                	pluginName = cfgMap.get("pluginName");
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override pluginName  = " + pluginName);
+                    }
+                }
             }
             else  {
             	tracer.log(TraceLevel.WARN, "Application configuration object is configured, but no valid properties found: " + cfgObjectName);
@@ -500,7 +500,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         	tracer.log(TraceLevel.INFO, "Resulting eventStoreUser = " + eventStoreUser +
                 " and passwd = *****"); // + eventStorePassword);
         	tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
-        	tracer.log(TraceLevel.INFO, "sslConnection: " + isSslConnection());
         	tracer.log(TraceLevel.INFO, "frontEndConnectionFlag: " + this.frontEndConnectionFlag);
         	tracer.log(TraceLevel.INFO, "pluginFlag: " + this.pluginFlag);
         	tracer.log(TraceLevel.INFO, "pluginName: " + this.pluginName);
@@ -827,7 +826,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
 
     @Parameter(name = "configObject", optional=true, 
-               description = "Specify the application configuration name. An application configuration can be created in the Streams Console or using the `streamtool mkappconfig ... <configObject name>`. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: `connectionString`, `databaseName`, `eventStoreUser` and `eventStorePassword`")
+               description = "Specify the application configuration name. An application configuration can be created in the Streams Console or using the `streamtool mkappconfig ... <configObject name>`. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: `connectionString`, `databaseName`, `eventStoreUser`, `eventStorePassword`, `keyStorePassword`, `trustStorePassword`, `pluginName`")
     public void setConfigObject(String s) { 
     	if (!("".equals(s))) {
     		cfgObjectName = s;
@@ -887,7 +886,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     public void setPrimaryKey(String s) {primaryKey = s;}
 
     
-	//Parameter sslConnection
+	/*
 	@Parameter(name = "sslConnection", optional = true, 
 			description = "This optional parameter specifies whether an SSL connection should be made to the database. When set to `true`, the **keyStore**, **keyStorePassword**, **trustStore** and **trustStorePassword** parameters can be used to specify the locations and passwords of the keyStore and trustStore. The default value is `false`.")
 	public void setSslConnection(boolean sslConnection) {
@@ -897,10 +896,11 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 	public boolean isSslConnection() {
 		return sslConnection;
 	}
+	*/
 
 	// Parameter keyStore
 	@Parameter(name = "keyStore" , optional = true, 
-			description = "This optional parameter specifies the path to the keyStore. If a relative path is specified, the path is relative to the application directory.")
+			description = "This parameter specifies the path to the keyStore file for the SSL connection. If a relative path is specified, the path is relative to the application directory.")
 	public void setKeyStore(String keyStore) {
 		if (!("".equals(keyStore))) {
 			this.keyStore = keyStore;
@@ -926,7 +926,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
 	// Parameter trustStore
 	@Parameter(name = "trustStore", optional = true, 
-			description = "This optional parameter specifies the path to the trustStore. If a relative path is specified, the path is relative to the application directory.")
+			description = "This parameter specifies the path to the trustStore file for the SSL connection. If a relative path is specified, the path is relative to the application directory.")
 	public void setTrustStore(String trustStore) {
 		if (!("".equals(trustStore))) {
 			this.trustStore = trustStore;
@@ -952,7 +952,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 	
 	// Parameter pluginName
 	@Parameter(name = "pluginName", optional = true, 
-			description = "This parameter specifies the plug-in name. The default value is `IBMPrivateCloudAuth`.")
+			description = "This parameter specifies the plug-in name for the SSL connection. The default value is `IBMPrivateCloudAuth`.")
 	public void setPluginName(String pluginName) {
 		if (!("".equals(pluginName))) {
 			this.pluginName = pluginName;
@@ -965,7 +965,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 	
 	//Parameter pluginFlag
 	@Parameter(name = "pluginFlag", optional = true, 
-			description = "This optional parameter specifies whether plug-in is enabled. The default value is `true`.")
+			description = "This parameter specifies whether plug-in is enabled for the SSL connection. The default value is `true`.")
 	public void setPluginFlag(boolean pluginFlag) {
 		this.pluginFlag = pluginFlag;
 	}
