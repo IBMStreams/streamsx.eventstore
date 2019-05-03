@@ -22,7 +22,4 @@ To use this toolkit, you must have an existing IBM Db2 Event Store database, and
 You can find precompiled EventStoreSink toolkits for various IBM Db2 Event Store RELEASES here:
 [Event Store Releases](https://github.com/IBMStreams/streamsx.eventstore/releases)
 
-## Supported versions
 
-- **IBM Streams:** 4.2.0 or later
-- **IBM Db2 Event Store:** 1.1.0

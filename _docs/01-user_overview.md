@@ -14,9 +14,15 @@ sidebar:
 
 ## [](#header-1)Toolkit description
 
-* [SPLDoc for the streamsx.eventstore toolkit](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc/html/index.html)
+* [SPLDoc for the streamsx.eventstore toolkit version 2.x](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc/html/index.html)
+
+The toolkit [2.0.0,3.0.0) is intended for use with IBM Streams release 4.3 and later.
+
+* [SPLDoc for the streamsx.eventstore toolkit version 1.x](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc1.0/html/index.html)
 
 The toolkit [0.1.0,1.0.0) is intended for use with IBM Streams release 4.2 and later.
+
+* [Python package documentation](http://streamsxeventstore.readthedocs.io)
 
 ## [](#header-2)Prerequisites
 
@@ -34,6 +40,6 @@ _Note: There are samples in the toolkit’s `samples` folder you may reference._
 
 ## [](#header-4)Getting Started with IBM Streams
 
-*   [Introduction to Streams Quick Start Edition](http://ibmstreams.github.io/streamsx.documentation/docs/4.3/qse-intro/)
-*   [Streams Getting Started Guide](http://ibmstreams.github.io/streamsx.documentation/docs/4.3/qse-getting-started/)
+* [Introduction to Streams Quick Start Edition](http://ibmstreams.github.io/streamsx.documentation/docs/4.3/qse-intro/)
+* [Streams Getting Started Guide](http://ibmstreams.github.io/streamsx.documentation/docs/4.3/qse-getting-started/)
 

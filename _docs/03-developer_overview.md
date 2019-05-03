@@ -66,7 +66,7 @@ Alternatively, change to the `com.ibm.streamsx.eventstore` directory and run:
 ./recompile.sh
 ```
 
-## Test the toolkit
+## Test the toolkit (version 1.x) with Developer Edition (1.x)
 
 Set the following environment variables for the toolkit location and the connection string:
 
