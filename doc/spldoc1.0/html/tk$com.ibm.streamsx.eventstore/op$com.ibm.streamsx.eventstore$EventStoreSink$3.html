@@ -22,7 +22,7 @@
 <div class="body refbody">
 <div class="section">
 <p class="p">
-<a class="xref" href="../toolkits/toolkits.html">IBMStreams streamsx.eventstore Toolkit</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 2.0.1</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; <a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink.html">EventStoreSink</a> &gt; Example</p>
+<a class="xref" href="../toolkits/toolkits.html">Toolkits</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 1.2.0</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; <a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink.html">EventStoreSink</a> &gt; Example</p>
 
 </div>
 
@@ -39,7 +39,6 @@ composite Main {
         expression&lt;int32&gt;   $batchSize: (int32)getSubmissionTimeValue("batchSize", "1000");
         expression&lt;rstring&gt; $databaseName: getSubmissionTimeValue("databaseName");
         expression&lt;rstring&gt; $tableName: getSubmissionTimeValue("tableName");
-        expression&lt;rstring&gt; $schemaName: getSubmissionTimeValue("schemaName");
         expression&lt;rstring&gt; $eventStoreUser: getSubmissionTimeValue("eventStoreUser", "");
         expression&lt;rstring&gt; $eventStorePassword: getSubmissionTimeValue("eventStorePassword", "");
 
@@ -59,7 +58,6 @@ composite Main {
                 databaseName: $databaseName;
                 primaryKey: 'key';
                 tableName: $tableName;
-                schemaName: $schemaName;
                 eventStoreUser: $eventStoreUser;
                 eventStorePassword: $eventStorePassword;
         }
