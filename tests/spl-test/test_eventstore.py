@@ -3,6 +3,7 @@ import unittest
 from streamsx.topology.topology import *
 from streamsx.topology.tester import Tester
 from streamsx.topology.state import ConsistentRegionConfig
+from streamsx.topology.schema import CommonSchema, StreamSchema
 import streamsx.spl.op as op
 import streamsx.spl.toolkit as tk
 import streamsx.rest as sr
@@ -11,6 +12,7 @@ import streamsx.eventstore as es
 
 import os
 import subprocess
+from subprocess import call, Popen, PIPE
 
 import streamsx.topology.context
 import requests
@@ -41,8 +43,40 @@ class TestDistributed(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        if os.environ.get('STREAMS_USERNAME') is not None:
+            self.streams_username = os.environ['STREAMS_USERNAME']
+        if os.environ.get('STREAMS_PASSWORD') is not None:
+            self.streams_password = os.environ['STREAMS_PASSWORD']
+        if os.environ.get('STREAMS_REST_URL') is not None:
+            self.streams_resturl = os.environ['STREAMS_REST_URL']
+
         self.connection = os.environ['EVENTSTORE_CONNECTION']
         self.database = os.environ['EVENTSTORE_DB']
+        if os.environ.get('EVENTSTORE_USER') is not None:
+            self.es_user = os.environ['EVENTSTORE_USER']
+        else:
+            self.es_user = None
+        if os.environ.get('EVENTSTORE_PASSWORD') is not None:
+            self.es_password = os.environ['EVENTSTORE_PASSWORD']
+        else:
+            self.es_password = None
+        self.front_end_connection_flag = False
+        if os.environ.get('EVENTSTORE_TRUSTSTORE') is not None:
+            self.es_truststore = os.environ['EVENTSTORE_TRUSTSTORE']
+        else:
+            self.es_truststore = None
+        if os.environ.get('EVENTSTORE_TRUSTSTORE_PASSWORD') is not None:
+            self.es_truststore_password = os.environ['EVENTSTORE_TRUSTSTORE_PASSWORD']
+        else:
+            self.es_truststore_password = None
+        if os.environ.get('EVENTSTORE_KEYSTORE') is not None:
+            self.es_keystore = os.environ['EVENTSTORE_KEYSTORE']
+        else:
+            self.es_keystore = None
+        if os.environ.get('EVENTSTORE_KEYSTORE_PASSWORD') is not None:
+            self.es_keystore_password = os.environ['EVENTSTORE_KEYSTORE_PASSWORD']
+        else:
+            self.es_keystore_password = None
 
     def setUp(self):
         Tester.setup_distributed(self)
@@ -54,22 +88,28 @@ class TestDistributed(unittest.TestCase):
         if self.eventstore_toolkit_location is not None:
             tk.add_toolkit(topo, self.eventstore_toolkit_location)
 
+    def _add_store_file(self, topology, path):
+        filename = os.path.basename(path)
+        topology.add_file_dependency(path, 'opt')
+        return 'opt/'+filename
+
     def _build_launch_validate(self, name, composite_name, parameters, toolkit_name, num_tuples, exact):
         print ("------ "+name+" ------")        
         topo = Topology(name)
         self._add_toolkits(topo, toolkit_name)
-	
+        if self.es_keystore is not None:
+            self._add_store_file(topo, self.es_keystore)	
+
         params = parameters
         # Call the test composite
         test_op = op.Source(topo, composite_name, 'tuple<rstring result>', params=params)
 
         tester = Tester(topo)
+        tester.run_for(400)
         tester.tuple_count(test_op.stream, num_tuples, exact=exact)
 
         cfg = {}
-        if ("TestICP" in str(self)):
-            cfg = self._service()
-
+ 
         # change trace level
         job_config = streamsx.topology.context.JobConfig(tracing='info')
         job_config.add(cfg)
@@ -95,6 +135,34 @@ class TestDistributed(unittest.TestCase):
         ri = subprocess.call([os.path.join(si, 'bin', 'spl-make-toolkit'), '-i', tkl])
 
 
+    def _run_shell_command_line(self, command):
+        process = Popen(command, universal_newlines=True, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        return stdout, stderr, process.returncode
+
+    def _create_app_config(self):
+        if ("TestICP" in str(self) or streams_install_env_var() is False):
+            print ("Create eventstore application configuration with REST")
+            url = urlparse(self.streams_resturl)
+            resturl = 'https://'+url.netloc+'/streams/rest/resources'
+            # get instance
+            print ('Input: '+self.streams_username+ ' ' + self.streams_password+ ' ' + resturl)
+            sc = sr.StreamsConnection(self.streams_username,self.streams_password,resturl)
+            sc.session.verify=False
+            #print (sc)
+            instance = sc.get_instance("sample")
+            #print ('Instance: '+str(instance))
+            res = es.configure_connection(instance, database=self.database, connection=self.connection, user=self.es_user, password=self.es_password, keystore_password=self.es_keystore_password, truststore_password=self.es_truststore_password)
+            print (str(res))
+        else:
+            if streams_install_env_var():
+                print ("Create eventstore application configuration with streamtool")
+                if self.es_keystore_password is not None:
+                    stdout, stderr, err = self._run_shell_command_line('cd '+self.samples_location+'; make configure-store')
+                else:
+                    stdout, stderr, err = self._run_shell_command_line('cd '+self.samples_location+'; make configure')
+                print (str(err))
+
     def test_insert_sample_flush_remaining_tuples(self):
         print ('\n---------'+str(self))
         name = 'test_insert_sample_flush_remaining_tuples'
@@ -102,10 +170,19 @@ class TestDistributed(unittest.TestCase):
             self._index_tk(self.samples_location)
         # test the sample application
         # final marker should flush the remaining tuples
-        num_expected = 305
+        num_expected = 105
         batch_size = 50
-        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample1', 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
-
+        params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'frontEndConnectionFlag':self.front_end_connection_flag, 'iterations': num_expected}
+        if self.es_password and self.es_user is not None:
+            params['eventStoreUser'] = self.es_user
+            params['eventStorePassword'] = self.es_password
+        if self.es_keystore_password and self.es_truststore_password is not None:
+            params['keyStore'] = 'opt/clientkeystore'
+            params['trustStore'] = 'opt/clientkeystore'
+            params['keyStorePassword'] = self.es_keystore_password
+            params['trustStorePassword'] = self.es_truststore_password
+         
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", params, '../../samples/EventStoreInsertSample', num_expected, True)
 
     def test_insert_sample_batch_complete(self):
         print ('\n---------'+str(self))
@@ -114,9 +191,19 @@ class TestDistributed(unittest.TestCase):
             self._index_tk(self.samples_location)
         # test the sample application
         # final marker received after last async batch is triggered
-        num_expected = 300
+        num_expected = 100
         batch_size = 50
-        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'iterations': num_expected}, '../../samples/EventStoreInsertSample', num_expected, True)
+        params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'frontEndConnectionFlag':self.front_end_connection_flag, 'iterations': num_expected}
+        if self.es_password and self.es_user is not None:
+            params['eventStoreUser'] = self.es_user
+            params['eventStorePassword'] = self.es_password
+        if self.es_keystore_password and self.es_truststore_password is not None:
+            params['keyStore'] = 'opt/clientkeystore'
+            params['trustStore'] = 'opt/clientkeystore'
+            params['keyStorePassword'] = self.es_keystore_password
+            params['trustStorePassword'] = self.es_truststore_password
+
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", params, '../../samples/EventStoreInsertSample', num_expected, True)
 
 
     def test_insert_consistent_region(self):
@@ -128,7 +215,7 @@ class TestDistributed(unittest.TestCase):
         trigger_period = 10
         num_expected_tuples = 8000
         num_resets = 2
-        run_for = 120 # in seconds
+        run_for = 200 # in seconds
 
         beacon = op.Source(topo, "spl.utility::Beacon",
             'tuple<int64 id, rstring val>',
@@ -137,7 +224,7 @@ class TestDistributed(unittest.TestCase):
         beacon.val = beacon.output(spltypes.rstring('CR_TEST'))
         beacon.stream.set_consistent(ConsistentRegionConfig.periodic(trigger_period))
         
-        es.insert(beacon.stream, self.connection, self.database, 'StreamsCRTable', primary_key='id', front_end_connection_flag=True)
+        es.insert(beacon.stream, connection=self.connection, database=self.database, table='StreamsCRTable', primary_key='id', front_end_connection_flag=False, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)
         
         #self._build_only(name, topo)
 
@@ -146,15 +233,61 @@ class TestDistributed(unittest.TestCase):
         tester.resets(num_resets) # minimum number of resets for each region
 
         cfg = {}
-        if ("TestICP" in str(self)):
-            cfg = self._service()
-
         # change trace level
         job_config = streamsx.topology.context.JobConfig(tracing='warn')
         job_config.add(cfg)
-
         cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
+        tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
+        print (str(tester.result))
 
+
+    def _create_stream(self, topo):
+        s = topo.source([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20])
+        schema=StreamSchema('tuple<int32 id, rstring name>').as_tuple()
+        return s.map(lambda x : (x,'X'+str(x*2)), schema=schema)
+
+    def test_insert_udp(self):
+        print ('\n---------'+str(self))
+        topo = Topology('test_insert_udp')
+        self._add_toolkits(topo, None)
+        s = self._create_stream(topo)
+        result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
+        # user-defined parallelism with two channels (two EventStoreSink operators)
+        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', front_end_connection_flag=self.front_end_connection_flag, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)      
+        res.print()
+
+        #self._build_only('test_insert_udp', topo)
+        tester = Tester(topo)
+        tester.run_for(120)
+        tester.tuple_count(res, 20, exact=True)
+
+        cfg = {}
+        job_config = streamsx.topology.context.JobConfig(tracing='info')
+        job_config.add(cfg)
+        cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
+        tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
+        print (str(tester.result))
+
+
+    def test_insert_with_app_config(self):
+        print ('\n---------'+str(self))
+        self._create_app_config()
+
+        topo = Topology('test_insert_with_app_config')
+        self._add_toolkits(topo, None)
+        s = self._create_stream(topo)
+        result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
+        res = es.insert(s, config='eventstore', table='SampleTable', schema=result_schema, primary_key='id', front_end_connection_flag=self.front_end_connection_flag, truststore=self.es_truststore, keystore=self.es_keystore)      
+        res.print()
+
+        tester = Tester(topo)
+        tester.run_for(120)
+        tester.tuple_count(res, 20, exact=True)
+
+        cfg = {}
+        job_config = streamsx.topology.context.JobConfig(tracing='info')
+        job_config.add(cfg)
+        cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
         tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
         print (str(tester.result))
 
@@ -216,28 +349,6 @@ class TestICP(TestDistributed):
         Tester.setup_distributed(self)
         self._use_local_toolkit()       
 
-    def _service (self, force_remote_build = True):
-        auth_host = os.environ['AUTH_HOST']
-        auth_user = os.environ['AUTH_USERNAME']
-        auth_password = os.environ['AUTH_PASSWORD']
-        streams_rest_url = os.environ['STREAMS_REST_URL']
-        streams_service_name = os.environ['STREAMS_SERVICE_NAME']
-        streams_build_service_port = os.environ['STREAMS_BUILD_SERVICE_PORT']
-        uri_parsed = urlparse (streams_rest_url)
-        streams_build_service = uri_parsed.hostname + ':' + streams_build_service_port
-        streams_rest_service = uri_parsed.netloc
-        r = requests.get ('https://' + auth_host + '/v1/preauth/validateAuth', auth=(auth_user, auth_password), verify=False)
-        token = r.json()['accessToken']
-        cfg = {
-            'type': 'streams',
-            'connection_info': {
-                'serviceBuildEndpoint': 'https://' + streams_build_service,
-                'serviceRestEndpoint': 'https://' + streams_rest_service + '/streams/rest/instances/' + streams_service_name
-            },
-            'service_token': token
-        }
-        cfg [streamsx.topology.context.ConfigParams.FORCE_REMOTE_BUILD] = force_remote_build
-        return cfg
 
 
 class TestICPRemote(TestICP):

@@ -1,9 +1,9 @@
 /.project
 /com.ibm.streamsx.eventstore/toolkit.xml
-/com.ibm.streamsx.eventstore/target/
-/com.ibm.streamsx.eventstore/project/project/
-/com.ibm.streamsx.eventstore/project/target/
-/com.ibm.streamsx.eventstore/project/build.properties
+/com.ibm.streamsx.eventstore/opt/downloaded/
 /com.ibm.streamsx.eventstore/doc/
+/com.ibm.streamsx.eventstore/impl/
+/com.ibm.streamsx.eventstore/lib/
 /com.ibm.streamsx.eventstore/com.ibm.streamsx.eventstore/EventStoreSink/EventStoreSink.xml
 /*RELEASE.tgz
+/tmp/
