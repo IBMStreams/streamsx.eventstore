@@ -133,14 +133,14 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private String cfgObjectName = "";
     private Map<String, String> cfgMap;
 
- 	// SSL parameters
- 	private String keyStore;
- 	private String trustStore;
- 	private String keyStorePassword;
- 	private String trustStorePassword;
- 	private boolean sslConnection = false;
- 	private String pluginName = "IBMPrivateCloudAuth";
- 	private boolean pluginFlag = true;
+    // SSL parameters
+    private String keyStore;
+    private String trustStore;
+    private String keyStorePassword;
+    private String trustStorePassword;
+    private boolean sslConnection = true;
+    private String pluginName = "IBMPrivateCloudAuth";
+    private boolean pluginFlag = true;
     
     // Flag to specify if the optional tuple insert result port is used
     private boolean hasResultsPort = false;
@@ -461,33 +461,45 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     }
                 }
                 if( cfgMap.containsKey("connectionString") ){
-                	connectionString = cfgMap.get("connectionString");
+                    connectionString = cfgMap.get("connectionString");
                     if (tracer.isInfoEnabled()) {
                     	tracer.log(TraceLevel.INFO, "Config override connectionString  = " + connectionString);
                     }
                 }
                 if( cfgMap.containsKey("databaseName") ){
-                	databaseName = cfgMap.get("databaseName");
+                    databaseName = cfgMap.get("databaseName");
                     if (tracer.isInfoEnabled()) {
                     	tracer.log(TraceLevel.INFO, "Config override databaseName  = " + databaseName);
                     }
                 }
                 if( cfgMap.containsKey("keyStorePassword") ){
-                	keyStorePassword = cfgMap.get("keyStorePassword");
+                    keyStorePassword = cfgMap.get("keyStorePassword");
                     if (tracer.isInfoEnabled()) {
                     	tracer.log(TraceLevel.INFO, "Config override keyStorePassword  = " + keyStorePassword);
                     }
                 }
                 if( cfgMap.containsKey("trustStorePassword") ){
-                	trustStorePassword = cfgMap.get("trustStorePassword");
+                    trustStorePassword = cfgMap.get("trustStorePassword");
                     if (tracer.isInfoEnabled()) {
                     	tracer.log(TraceLevel.INFO, "Config override trustStorePassword  = " + trustStorePassword);
                     }
                 }
                 if( cfgMap.containsKey("pluginName") ){
-                	pluginName = cfgMap.get("pluginName");
+                    pluginName = cfgMap.get("pluginName");
                     if (tracer.isInfoEnabled()) {
                     	tracer.log(TraceLevel.INFO, "Config override pluginName  = " + pluginName);
+                    }
+                }
+                if( cfgMap.containsKey("pluginFlag") ){
+                    pluginFlag = Boolean.valueOf(cfgMap.get("pluginFlag"));
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override pluginFlag  = " + pluginFlag);
+                    }
+                }
+                if( cfgMap.containsKey("sslConnection") ){
+                    sslConnection = Boolean.valueOf(cfgMap.get("sslConnection"));
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override sslConnection  = " + sslConnection);
                     }
                 }
             }
@@ -496,13 +508,13 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             } 
         }
         if (tracer.isInfoEnabled()) {
-        	tracer.log(TraceLevel.INFO, "Connect to DB " + databaseName + " with " + connectionString);
-        	tracer.log(TraceLevel.INFO, "Resulting eventStoreUser = " + eventStoreUser +
-                " and passwd = *****"); // + eventStorePassword);
-        	tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
-        	tracer.log(TraceLevel.INFO, "frontEndConnectionFlag: " + this.frontEndConnectionFlag);
-        	tracer.log(TraceLevel.INFO, "pluginFlag: " + this.pluginFlag);
-        	tracer.log(TraceLevel.INFO, "pluginName: " + this.pluginName);
+            tracer.log(TraceLevel.INFO, "Connect to DB " + databaseName + " with " + connectionString);
+            tracer.log(TraceLevel.INFO, "Resulting eventStoreUser = " + eventStoreUser + " and passwd = *****"); // + eventStorePassword);
+            tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
+            tracer.log(TraceLevel.INFO, "frontEndConnectionFlag: " + this.frontEndConnectionFlag);
+            tracer.log(TraceLevel.INFO, "sslConnection: " + this.sslConnection);
+            tracer.log(TraceLevel.INFO, "pluginFlag: " + this.pluginFlag);
+            tracer.log(TraceLevel.INFO, "pluginName: " + this.pluginName);
         }
 
         // Set up connection to the IBM Db2 Event Store engine
