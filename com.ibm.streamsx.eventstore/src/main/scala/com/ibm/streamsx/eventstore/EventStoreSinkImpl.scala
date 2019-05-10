@@ -182,25 +182,22 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
            //ConfigurationReader.setLegacyEventPassword(eventStorePassword)
         }
 
-        if (sslConnection) {
-           log.info( "setSSLEnabled: " + "true")
-           ConfigurationReader.setSSLEnabled("true")
-        }
+        log.info( "setSSLEnabled: " + sslConnection)
+        ConfigurationReader.setSSLEnabled(sslConnection)
         
+        log.info( "setClientPlugin: " + pluginFlag)
+        ConfigurationReader.setClientPlugin(pluginFlag)
+      
         if (pluginName != null) {
            log.info( "setClientPluginName: " + pluginName)
            ConfigurationReader.setClientPluginName(pluginName)
-        }
-        if (pluginFlag) {
-           log.info( "setClientPlugin: " + pluginFlag)
-           ConfigurationReader.setClientPlugin(pluginFlag)
         }
         if (trustStore != null) {
            log.info( "setSslTrustStoreLocation: " + trustStore)
            ConfigurationReader.setSslTrustStoreLocation(trustStore)
         }
         if (trustStorePassword != null) {
-           log.info( "setSslTrustStorePassword: " + trustStorePassword)
+           log.info( "setSslTrustStorePassword: " + "xxx")
            ConfigurationReader.setSslTrustStorePassword(trustStorePassword)
         }
         if (keyStore != null) {
@@ -208,7 +205,7 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
            ConfigurationReader.setSslKeyStoreLocation(keyStore)
         }
         if (keyStorePassword != null) {
-           log.info( "setSslKeyStorePassword: " + keyStorePassword)
+           log.info( "setSslKeyStorePassword: " + "xxx")
            ConfigurationReader.setSslKeyStorePassword(keyStorePassword)
         }
         log.info( "EventContext.getEventContext: " + databaseName)
