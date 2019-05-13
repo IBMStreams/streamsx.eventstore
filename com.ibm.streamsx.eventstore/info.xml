@@ -18,7 +18,7 @@ IBM Db2 Event Store is an in-memory database designed to rapidly ingest and anal
 * SSL connection
 
 ]]></info:description>
-        <info:version>2.0.2.beta1</info:version>
+        <info:version>2.0.2.beta2</info:version>
         <info:requiredProductVersion>4.3.0.0</info:requiredProductVersion>
     </info:identity>
     <info:dependencies/>
