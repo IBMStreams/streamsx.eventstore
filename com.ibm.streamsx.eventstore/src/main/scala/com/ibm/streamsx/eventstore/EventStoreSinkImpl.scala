@@ -84,12 +84,16 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
   val logLevel = LogManager.getRootLogger().getLevel()
   log.info("Root logger level = " + logLevel)
   // suppress traces from com.ibm.event on INFO level
-  if ((logLevel == Level.DEBUG) || (logLevel == Level.TRACE) || (logLevel == Level.WARN))
+  if ((logLevel == Level.DEBUG) || (logLevel == Level.TRACE)) {
     LogManager.getLogger("com.ibm.event").setLevel(logLevel)
-  else
+    LogManager.getLogger("org.apache.spark.sql.ibm.event").setLevel(logLevel)
+    LogManager.getLogger("io.netty").setLevel(logLevel)
+  }
+  else {
+    LogManager.getLogger("org.apache.spark.sql.ibm.event").setLevel(Level.ERROR)
     LogManager.getLogger("com.ibm.event").setLevel(Level.ERROR)
-  
-  LogManager.getLogger("io.netty").setLevel(Level.OFF)
+    LogManager.getLogger("io.netty").setLevel(Level.OFF)
+  }
 
  try {
      connectToDatabase(true)

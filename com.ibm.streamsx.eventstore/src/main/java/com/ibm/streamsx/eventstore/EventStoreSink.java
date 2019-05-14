@@ -134,11 +134,12 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private Map<String, String> cfgMap;
 
     // SSL parameters
-    private String keyStore;
-    private String trustStore;
-    private String keyStorePassword;
-    private String trustStorePassword;
+    private String keyStore = null;
+    private String trustStore = null;
+    private String keyStorePassword = null;
+    private String trustStorePassword = null;
     private boolean sslConnection = true;
+    private boolean sslDebug = false;
     private String pluginName = "IBMPrivateCloudAuth";
     private boolean pluginFlag = true;
     
@@ -475,13 +476,13 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                 if( cfgMap.containsKey("keyStorePassword") ){
                     keyStorePassword = cfgMap.get("keyStorePassword");
                     if (tracer.isInfoEnabled()) {
-                    	tracer.log(TraceLevel.INFO, "Config override keyStorePassword  = " + keyStorePassword);
+                    	tracer.log(TraceLevel.INFO, "Config override keyStorePassword  = *****");
                     }
                 }
                 if( cfgMap.containsKey("trustStorePassword") ){
                     trustStorePassword = cfgMap.get("trustStorePassword");
                     if (tracer.isInfoEnabled()) {
-                    	tracer.log(TraceLevel.INFO, "Config override trustStorePassword  = " + trustStorePassword);
+                    	tracer.log(TraceLevel.INFO, "Config override trustStorePassword  = *****");
                     }
                 }
                 if( cfgMap.containsKey("pluginName") ){
@@ -502,69 +503,91 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     	tracer.log(TraceLevel.INFO, "Config override sslConnection  = " + sslConnection);
                     }
                 }
+                if( cfgMap.containsKey("sslDebug") ){
+                	sslDebug = Boolean.valueOf(cfgMap.get("sslDebug"));
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override sslDebug  = " + sslDebug);
+                    }
+                }
             }
             else  {
             	tracer.log(TraceLevel.WARN, "Application configuration object is configured, but no valid properties found: " + cfgObjectName);
             } 
         }
         if (tracer.isInfoEnabled()) {
-            tracer.log(TraceLevel.INFO, "Connect to DB " + databaseName + " with " + connectionString);
-            tracer.log(TraceLevel.INFO, "Resulting eventStoreUser = " + eventStoreUser + " and passwd = *****"); // + eventStorePassword);
+            tracer.log(TraceLevel.INFO, "Resulting eventStoreUser = " + eventStoreUser + " and passwd = *****");
             tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
             tracer.log(TraceLevel.INFO, "frontEndConnectionFlag: " + this.frontEndConnectionFlag);
             tracer.log(TraceLevel.INFO, "sslConnection: " + this.sslConnection);
+            tracer.log(TraceLevel.INFO, "sslDebug: " + this.sslDebug);
             tracer.log(TraceLevel.INFO, "pluginFlag: " + this.pluginFlag);
             tracer.log(TraceLevel.INFO, "pluginName: " + this.pluginName);
         }
+        
+        StreamingInput<Tuple> streamingInput = context.getStreamingInputs().get(0);
+        StreamSchema streamSchema = streamingInput.getStreamSchema();
 
-        // Set up connection to the IBM Db2 Event Store engine
-        try {
-            StreamingInput<Tuple> streamingInput = context.getStreamingInputs().get(0);
-            StreamSchema streamSchema = streamingInput.getStreamSchema();
-
-            if (impl == null) {
-                this.trustStore = getAbsolutePath(this.trustStore);
-                this.keyStore = getAbsolutePath(this.keyStore);
+        if (impl == null) {
+            this.trustStore = getAbsolutePath(this.trustStore);
+            this.keyStore = getAbsolutePath(this.keyStore);
+            if (sslConnection) {
                 if (null != this.keyStore) {
-                	tracer.log(TraceLevel.INFO, "System.setProperty: javax.net.ssl.keyStoreType=PKCS12");
+            	    tracer.log(TraceLevel.INFO, "System.setProperty: javax.net.ssl.keyStoreType=PKCS12");
                     System.setProperty("javax.net.ssl.keyStoreType", "PKCS12");
+                    //System.setProperty("javax.net.ssl.keyStore", this.keyStore);
                 }
-                if( databaseName == null || databaseName == "" ||
-                        tableName == null || tableName == "" ){
-                	tracer.log(TraceLevel.ERROR, "No database or table name was given so we cannot carry out the insert");
-                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
-                            connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
-                            eventStoreUser, eventStorePassword,
-                            partitioningKey, primaryKey,
-                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword, 
-                            pluginName, pluginFlag);
+                if (null != this.trustStore) {
+            	    tracer.log(TraceLevel.INFO, "System.setProperty: javax.net.ssl.trustStoreType=PKCS12");
+                    System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
+                    //System.setProperty("javax.net.ssl.trustStore", this.trustStore);
                 }
-                else{
-                	if (tracer.isInfoEnabled()) {
-                		tracer.log(TraceLevel.INFO, "databaseName= " + databaseName +
-                            " tabename= " + tableName );
-                	}
-                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
-                            connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
-                            eventStoreUser, eventStorePassword,
-                            partitioningKey, primaryKey,
-                            sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword,
-                            pluginName, pluginFlag);
-                }
-            }
-            // If the batch size if not provided calculate the default batchSize
-            if( !batchSizeParmSet ){
-                batchSize = impl.calcDefaultBatchSize();
-                if (tracer.isInfoEnabled()) {
-                	tracer.log(TraceLevel.INFO, "Set default batch size: " + batchSize );
-                }
+                //if (null != keyStorePassword) {
+                    //System.setProperty("javax.net.ssl.keyStorePassword", keyStorePassword);
+                //}
+                //if (null != trustStorePassword) {
+                    //System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
+                //}
+    			if (isSslDebug()) {
+    				tracer.log(TraceLevel.INFO, "System.setProperty: javax.net.debug=true");
+    				System.setProperty("javax.net.debug","true");
+    			}
             }
 
-            batch = newBatch();
-        } catch(Exception e) {
-        	tracer.log(TraceLevel.ERROR, "Failed to connect to IBM Db2 Event Store.\n"+ stringifyStackTrace(e) );
-            throw e;
+            if( databaseName == null || databaseName == "" ||
+                    tableName == null || tableName == "" ){
+            	tracer.log(TraceLevel.ERROR, "No database or table name was given so we cannot carry out the insert");
+            	throw new IllegalArgumentException("No database or table name was given so we cannot carry out the insert");
+            }
+            else{
+            	if (tracer.isInfoEnabled()) {
+            		tracer.log(TraceLevel.INFO, "Connect to DB " + databaseName + " with " + connectionString);
+            		tracer.log(TraceLevel.INFO, "tableName= " + tableName );
+            	}
+            	try {
+            		// Set up connection to the IBM Db2 Event Store engine
+                    impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
+                        connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
+                        eventStoreUser, eventStorePassword,
+                        partitioningKey, primaryKey,
+                        sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword,
+                        pluginName, pluginFlag);
+                
+                } catch(Exception e) {
+                    tracer.log(TraceLevel.ERROR, "Failed to connect to IBM Db2 Event Store.\n"+ stringifyStackTrace(e) );
+                    throw e;
+                }
+            }
         }
+        // If the batch size if not provided calculate the default batchSize
+        if( !batchSizeParmSet ){
+            batchSize = impl.calcDefaultBatchSize();
+            if (tracer.isInfoEnabled()) {
+            	tracer.log(TraceLevel.INFO, "Set default batch size: " + batchSize );
+            }
+        }
+
+        batch = newBatch();
+
     }
 
      
@@ -838,7 +861,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
 
     @Parameter(name = "configObject", optional=true, 
-               description = "Specify the application configuration name. An application configuration can be created in the Streams Console or using the `streamtool mkappconfig ... <configObject name>`. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: `connectionString`, `databaseName`, `eventStoreUser`, `eventStorePassword`, `keyStorePassword`, `trustStorePassword`, `pluginName`")
+               description = "Specify the application configuration name. An application configuration can be created in the Streams Console or using the `streamtool mkappconfig ... <configObject name>`. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: `connectionString`, `databaseName`, `eventStoreUser`, `eventStorePassword`, `keyStorePassword`, `trustStorePassword`, `pluginName`, `pluginFlag`, `sslConnection`")
     public void setConfigObject(String s) { 
     	if (!("".equals(s))) {
     		cfgObjectName = s;
@@ -852,7 +875,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
 
     @Parameter(name="eventStoreUser", optional=true,
-		description = "Name of the IBM Db2 Event Store User in order to connect. If you do not specify the `eventStoreUser` parameter or an empty string is set, then a default is used.")
+		description = "Name of the IBM Db2 Event Store User in order to connect.")
     public void setEventStoreUser(String s) {
     	if (!("".equals(s))) {
     		eventStoreUser = s;
@@ -866,7 +889,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
      */
 
     @Parameter(name="eventStorePassword", optional=true,
-		description = "Password for the IBM Db2 Event Store User in order to connect. If you do not specify the `eventStorePassword` parameter or an empty string is set, then a default is used.")
+		description = "Password for the IBM Db2 Event Store User in order to connect.")
     public void setEventStorePassword(String s) {
     	if (!("".equals(s))) {
     		eventStorePassword = s;
@@ -898,9 +921,8 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     public void setPrimaryKey(String s) {primaryKey = s;}
 
     
-	/*
 	@Parameter(name = "sslConnection", optional = true, 
-			description = "This optional parameter specifies whether an SSL connection should be made to the database. When set to `true`, the **keyStore**, **keyStorePassword**, **trustStore** and **trustStorePassword** parameters can be used to specify the locations and passwords of the keyStore and trustStore. The default value is `false`.")
+			description = "This optional parameter specifies whether an SSL connection should be made to the database. The default value is `true`.")
 	public void setSslConnection(boolean sslConnection) {
 		this.sslConnection = sslConnection;
 	}
@@ -908,7 +930,18 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 	public boolean isSslConnection() {
 		return sslConnection;
 	}
-	*/
+	
+    @Parameter(name="sslDebug", optional=true,
+           	description="If SSL/TLS protocol debugging is enabled, all protocol data and information is logged to the console. "
+           	+ "Use this to debug TLS connection problems. The default is 'false'. "
+        	+ "This parameter can be overwritten by the application configuration."	
+        )
+    public void setSslDebug(boolean sslDebug) {
+   		this.sslDebug = sslDebug;
+   	}
+	public boolean isSslDebug() {
+		return sslDebug;
+	}
 
 	// Parameter keyStore
 	@Parameter(name = "keyStore" , optional = true, 
