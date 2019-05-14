@@ -139,6 +139,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private String keyStorePassword = null;
     private String trustStorePassword = null;
     private boolean sslConnection = true;
+    private boolean sslDebug = false;
     private String pluginName = "IBMPrivateCloudAuth";
     private boolean pluginFlag = true;
     
@@ -502,6 +503,12 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
                     	tracer.log(TraceLevel.INFO, "Config override sslConnection  = " + sslConnection);
                     }
                 }
+                if( cfgMap.containsKey("sslDebug") ){
+                	sslDebug = Boolean.valueOf(cfgMap.get("sslDebug"));
+                    if (tracer.isInfoEnabled()) {
+                    	tracer.log(TraceLevel.INFO, "Config override sslDebug  = " + sslDebug);
+                    }
+                }
             }
             else  {
             	tracer.log(TraceLevel.WARN, "Application configuration object is configured, but no valid properties found: " + cfgObjectName);
@@ -512,6 +519,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             tracer.log(TraceLevel.INFO, "The max number of active batches is " + maxNumActiveBatches);
             tracer.log(TraceLevel.INFO, "frontEndConnectionFlag: " + this.frontEndConnectionFlag);
             tracer.log(TraceLevel.INFO, "sslConnection: " + this.sslConnection);
+            tracer.log(TraceLevel.INFO, "sslDebug: " + this.sslDebug);
             tracer.log(TraceLevel.INFO, "pluginFlag: " + this.pluginFlag);
             tracer.log(TraceLevel.INFO, "pluginName: " + this.pluginName);
         }
@@ -522,10 +530,29 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         if (impl == null) {
             this.trustStore = getAbsolutePath(this.trustStore);
             this.keyStore = getAbsolutePath(this.keyStore);
-            if (null != this.keyStore) {
-            	tracer.log(TraceLevel.INFO, "System.setProperty: javax.net.ssl.keyStoreType=PKCS12");
-                System.setProperty("javax.net.ssl.keyStoreType", "PKCS12");
+            if (sslConnection) {
+                if (null != this.keyStore) {
+            	    tracer.log(TraceLevel.INFO, "System.setProperty: javax.net.ssl.keyStoreType=PKCS12");
+                    System.setProperty("javax.net.ssl.keyStoreType", "PKCS12");
+                    //System.setProperty("javax.net.ssl.keyStore", this.keyStore);
+                }
+                if (null != this.trustStore) {
+            	    tracer.log(TraceLevel.INFO, "System.setProperty: javax.net.ssl.trustStoreType=PKCS12");
+                    System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
+                    //System.setProperty("javax.net.ssl.trustStore", this.trustStore);
+                }
+                //if (null != keyStorePassword) {
+                    //System.setProperty("javax.net.ssl.keyStorePassword", keyStorePassword);
+                //}
+                //if (null != trustStorePassword) {
+                    //System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
+                //}
+    			if (isSslDebug()) {
+    				tracer.log(TraceLevel.INFO, "System.setProperty: javax.net.debug=true");
+    				System.setProperty("javax.net.debug","true");
+    			}
             }
+
             if( databaseName == null || databaseName == "" ||
                     tableName == null || tableName == "" ){
             	tracer.log(TraceLevel.ERROR, "No database or table name was given so we cannot carry out the insert");
@@ -902,6 +929,18 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     
 	public boolean isSslConnection() {
 		return sslConnection;
+	}
+	
+    @Parameter(name="sslDebug", optional=true,
+           	description="If SSL/TLS protocol debugging is enabled, all protocol data and information is logged to the console. "
+           	+ "Use this to debug TLS connection problems. The default is 'false'. "
+        	+ "This parameter can be overwritten by the application configuration."	
+        )
+    public void setSslDebug(boolean sslDebug) {
+   		this.sslDebug = sslDebug;
+   	}
+	public boolean isSslDebug() {
+		return sslDebug;
 	}
 
 	// Parameter keyStore
