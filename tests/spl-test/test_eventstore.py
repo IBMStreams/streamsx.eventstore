@@ -142,16 +142,15 @@ class TestDistributed(unittest.TestCase):
 
     def _create_app_config(self):
         if ("TestICP" in str(self) or streams_install_env_var() is False):
-            print ("Create eventstore application configuration with REST")
+            instance_name = self.streams_resturl.split('/').pop()
+            print ("Create eventstore application configuration with REST to instance: "+ instance_name)
             url = urlparse(self.streams_resturl)
             resturl = 'https://'+url.netloc+'/streams/rest/resources'
             # get instance
             print ('Input: '+self.streams_username+ ' ' + self.streams_password+ ' ' + resturl)
             sc = sr.StreamsConnection(self.streams_username,self.streams_password,resturl)
             sc.session.verify=False
-            #print (sc)
-            instance = sc.get_instance("sample")
-            #print ('Instance: '+str(instance))
+            instance = sc.get_instance(instance_name)
             res = es.configure_connection(instance, database=self.database, connection=self.connection, user=self.es_user, password=self.es_password, keystore_password=self.es_keystore_password, truststore_password=self.es_truststore_password)
             print (str(res))
         else:
@@ -224,7 +223,7 @@ class TestDistributed(unittest.TestCase):
         beacon.val = beacon.output(spltypes.rstring('CR_TEST'))
         beacon.stream.set_consistent(ConsistentRegionConfig.periodic(trigger_period))
         
-        es.insert(beacon.stream, connection=self.connection, database=self.database, table='StreamsCRTable', primary_key='id', front_end_connection_flag=False, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)
+        es.insert(beacon.stream, connection=self.connection, database=self.database, table='StreamsCRTable', primary_key='id', partitioning_key='id', front_end_connection_flag=False, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)
         
         #self._build_only(name, topo)
 
@@ -253,7 +252,7 @@ class TestDistributed(unittest.TestCase):
         s = self._create_stream(topo)
         result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
         # user-defined parallelism with two channels (two EventStoreSink operators)
-        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', front_end_connection_flag=self.front_end_connection_flag, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)      
+        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', partitioning_key='id', front_end_connection_flag=self.front_end_connection_flag, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)      
         res.print()
 
         #self._build_only('test_insert_udp', topo)
@@ -272,12 +271,12 @@ class TestDistributed(unittest.TestCase):
     def test_insert_with_app_config(self):
         print ('\n---------'+str(self))
         self._create_app_config()
-
+        
         topo = Topology('test_insert_with_app_config')
         self._add_toolkits(topo, None)
         s = self._create_stream(topo)
         result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
-        res = es.insert(s, config='eventstore', table='SampleTable', schema=result_schema, primary_key='id', front_end_connection_flag=self.front_end_connection_flag, truststore=self.es_truststore, keystore=self.es_keystore)      
+        res = es.insert(s, config='eventstore', table='SampleTable', schema=result_schema, primary_key='id', partitioning_key='id', front_end_connection_flag=self.front_end_connection_flag, truststore=self.es_truststore, keystore=self.es_keystore)      
         res.print()
 
         tester = Tester(topo)
