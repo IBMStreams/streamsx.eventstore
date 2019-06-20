@@ -203,6 +203,27 @@ class TestDistributed(unittest.TestCase):
             params['trustStorePassword'] = self.es_truststore_password
 
         self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::InsertSampleComp", params, '../../samples/EventStoreInsertSample', num_expected, True)
+        
+    def test_insert_optional_types(self):
+        print ('\n---------'+str(self))
+        name = 'test_insert_optional_types'
+        if (streams_install_env_var()):
+            self._index_tk(self.samples_location)
+        # test the sample application
+        # final marker received after last async batch is triggered
+        num_expected = 100
+        batch_size = 50
+        params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'STREAMS_OPTIONAL_TYPES_TAB', 'batchSize':batch_size, 'frontEndConnectionFlag':self.front_end_connection_flag, 'iterations': num_expected}
+        if self.es_password and self.es_user is not None:
+            params['eventStoreUser'] = self.es_user
+            params['eventStorePassword'] = self.es_password
+        if self.es_keystore_password and self.es_truststore_password is not None:
+            params['keyStore'] = 'opt/clientkeystore'
+            params['trustStore'] = 'opt/clientkeystore'
+            params['keyStorePassword'] = self.es_keystore_password
+            params['trustStorePassword'] = self.es_truststore_password
+
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::OptionalTypesSampleComp", params, '../../samples/EventStoreNullableColumnSample', num_expected, True)
 
 
     def test_insert_consistent_region(self):

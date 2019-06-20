@@ -1,0 +1,195 @@
+/*
+** Copyright (C) 2019  International Business Machines Corporation
+** All Rights Reserved
+*/
+namespace com.ibm.streamsx.eventstore.sample;
+
+use com.ibm.streamsx.eventstore::*;
+
+/**
+ * This sample application demonstrates how to use the EventStoreSink operator with optional types.
+ *
+ * @param connectionString;
+ * Parameter to configure the connection to the Event Store database
+ *
+ * @param batchSize
+ * Optional parameter to set the batch size, default: 50
+ * 
+ * @param databaseName
+ * Optional parameter to set the database name, default: EVENTDB
+ *
+ * @param tableName
+ * Optional parameter to set the table name, default: SimpleTab
+ *
+ * @param schemaName
+ * Optional parameter to set the name of the table schema name of the table into which to insert data. If not used the default will be the user id.
+ *
+ * @param eventStoreUser
+ * The user ID to use to connect to IBM DB2 Event Store.
+ *
+ * @param eventStorePassword
+ * The password to use to connect to IBM Db2 Event Store.
+ *
+ * @param configObject
+ * Specify the application configuration name. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: connectionString, databaseName, eventStoreUser and eventStorePassword
+ *
+ * @param frontEndConnectionFlag
+ * Set to true to connect through a Secure Gateway for Event Store
+ * 
+ * @param keyStore
+ * Location of key store file. Parameter is ignored if sslConnection is false.
+ *
+ * @param keyStorePassword
+ * Set password of the key store.
+ * 
+ * @param trustStore
+ * Location of trust store file. Parameter is ignored if sslConnection is false.
+ * 
+ * @param trustStorePassword
+ * Set password of the trust store.
+ */
+public composite OptionalTypesSample {
+	param
+		expression<rstring> $connectionString: getSubmissionTimeValue("connectionString", "");
+		expression<int32>   $batchSize: (int32)getSubmissionTimeValue("batchSize", "50");
+		expression<rstring> $databaseName : getSubmissionTimeValue("databaseName", "EVENTDB");
+		expression<rstring> $tableName : getSubmissionTimeValue("tableName", "SimpleTab");
+		expression<rstring> $schemaName : getSubmissionTimeValue("schemaName", ""); // empty uses default
+		expression<rstring> $eventStoreUser : getSubmissionTimeValue("eventStoreUser", "");
+		expression<rstring> $eventStorePassword : getSubmissionTimeValue("eventStorePassword", "");
+		expression<rstring> $configObject : getSubmissionTimeValue("configObject", ""); // empty not used
+		expression<boolean> $frontEndConnectionFlag : (boolean)getSubmissionTimeValue("frontEndConnectionFlag", "false");
+		expression<rstring> $keyStore: getSubmissionTimeValue("keyStore", ""); // empty not used
+		expression<rstring> $keyStorePassword: getSubmissionTimeValue("keyStorePassword", ""); // empty not used
+		expression<rstring> $trustStore: getSubmissionTimeValue("trustStore", ""); // empty not used
+		expression<rstring> $trustStorePassword: getSubmissionTimeValue("trustStorePassword", ""); // empty not used
+
+	graph
+
+		stream<rstring result> SampleRes = OptionalTypesSampleComp() {
+			param
+				connectionString: $connectionString;
+				batchSize: $batchSize;
+				databaseName: $databaseName;
+				tableName: $tableName;
+				schemaName: $schemaName;
+				eventStoreUser: $eventStoreUser;
+				eventStorePassword: $eventStorePassword;
+				configObject: $configObject;
+				frontEndConnectionFlag: $frontEndConnectionFlag;
+				keyStore: $keyStore;
+				keyStorePassword: $keyStorePassword;
+				trustStore: $trustStore;
+				trustStorePassword: $trustStorePassword;
+		}	
+}
+
+/**
+ * Used by OptionalTypesSample main composite and test application
+ *
+ * @param connectionString;
+ * Parameter to configure the connection to the Event Store database
+ *
+ * @param batchSize
+ * Optional parameter to set the batch size, default: 50
+ * 
+ * @param databaseName
+ * Optional parameter to set the database name, default: EVENTDB
+ *
+ * @param tableName
+ * Optional parameter to set the table name, default: SimpleTab
+ *
+ * @param schemaName
+ * Optional parameter to set the name of the table schema name of the table into which to insert data. If not used the default will be the user id.
+ *
+ * @param eventStoreUser
+ * The user ID to use to connect to IBM DB2 Event Store.
+ *
+ * @param eventStorePassword
+ * The password to use to connect to IBM Db2 Event Store.
+ *
+ * @param configObject
+ * Specify the application configuration name. If you specify parameter values (properties) in the configuration object, they override the values that are configured for the EventStoreSink operator. Supported properties are: connectionString, databaseName, eventStoreUser and eventStorePassword
+ *
+ * @param frontEndConnectionFlag
+ * Set to true to connect through a Secure Gateway for Event Store
+ *
+ * @param keyStore
+ * Location of key store file. Parameter is ignored if sslConnection is false.
+ *
+ * @param keyStorePassword
+ * Set password of the key store.
+ * 
+ * @param trustStore
+ * Location of trust store file. Parameter is ignored if sslConnection is false.
+ * 
+ * @param trustStorePassword
+ * Set password of the trust store.
+ * 
+ * @param iterations
+ * The number of tuples generated by the Beacon
+ *
+ * @output SampleResult
+ * This stream is evaluated by the tester.
+ */
+public composite OptionalTypesSampleComp (output SampleResult) {
+	param
+		expression<rstring> $connectionString: "";
+		expression<int32>   $batchSize: 50;
+		expression<rstring> $databaseName: "EVENTDB";
+		expression<rstring> $tableName: "STREAMS_OPTIONAL_TYPES_TAB";
+		expression<rstring> $schemaName : ""; // empty uses default
+		expression<rstring> $eventStoreUser : ""; // empty uses default
+		expression<rstring> $eventStorePassword : ""; // empty uses default
+		expression<rstring> $configObject: "";
+		expression<boolean> $frontEndConnectionFlag: false;
+		expression<rstring> $keyStore: ""; // empty not used
+		expression<rstring> $keyStorePassword: ""; // empty not used
+		expression<rstring> $trustStore: ""; // empty not used
+		expression<rstring> $trustStorePassword: ""; // empty not used
+		expression<int32>   $iterations: 100;
+
+	type
+	        SimpleType = int32 ID, optional<int64> ID2, rstring NAME, optional<rstring> LNAME, optional<int32> OPT;
+
+	graph
+		
+		stream<SimpleType> Beacon = spl.utility::Beacon() {
+			param
+				period: 0.1;
+				iterations: $iterations;
+			output
+				Beacon:	ID=(int32)IterationCount(), ID2=(int64)IterationCount()*2l, NAME='SAMPLE';
+		}
+
+		// The output streams contains an attribute "_Inserted_" to indicate the result of the insert (true or false).
+		stream<int32 ID, optional<int64> ID2, rstring NAME, optional<rstring> LNAME, optional<int32> OPT, boolean _Inserted_> InsertResults = com.ibm.streamsx.eventstore::EventStoreSink(Beacon) {
+			param
+				configObject: $configObject;
+				batchSize: $batchSize;
+				connectionString: $connectionString;
+				databaseName: $databaseName;
+				primaryKey: 'ID';
+				partitioningKey: 'ID';
+				tableName: $tableName;
+				schemaName: $schemaName;
+				eventStoreUser: $eventStoreUser;
+				eventStorePassword: $eventStorePassword;
+				frontEndConnectionFlag: $frontEndConnectionFlag;
+				keyStore: $keyStore;
+				keyStorePassword: $keyStorePassword;
+				trustStore: $trustStore;
+				trustStorePassword: $trustStorePassword;
+		}
+
+		stream<rstring result> SampleResult = Custom(InsertResults as I)  {
+			logic
+			onTuple I: {
+				println((rstring) I);
+				if(I._Inserted_) {
+					submit ({result="ok"}, SampleResult);
+				}
+			}
+		}
+
+}
