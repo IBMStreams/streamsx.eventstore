@@ -148,8 +148,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     // Variable to specify tuple insert result output port
     private StreamingOutput<OutputTuple> resultsOutputPort;
 
-    String nullMapString = null;
-
     OperatorMetrics opMetrics = null;
 
     /* Metrics include the count of the number of batches that failed to be processed by IBM Db2 Event Store
@@ -566,7 +564,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             	try {
             		// Set up connection to the IBM Db2 Event Store engine
                     impl = EventStoreSinkImpl/*EventStoreSinkJImplObject*/.mkWriter(databaseName, tableName, schemaName,
-                        connectionString, frontEndConnectionFlag, streamSchema, nullMapString,
+                        connectionString, frontEndConnectionFlag, streamSchema,
                         eventStoreUser, eventStorePassword,
                         partitioningKey, primaryKey,
                         sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword,
@@ -836,19 +834,6 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
         if( maxNumActiveBatches >= 1 ) {
             this.maxNumActiveBatches = maxNumActiveBatches;
         }
-    }
-
-    /**
-     * Set the nullMapString information which will be null or a json string
-     * that will have the column name and a value in the column's data domain
-     * that represents a NULL value since IBM streams does not pass null values.
-     * 
-     * @param nullMapString
-     */
-    @Parameter(name="nullMapString", optional=true,
-            description="Set the null map JSON represented by a string.")
-    public synchronized void setNullMapString(String nullMapString){
-        this.nullMapString = nullMapString;
     }
 
     /**
@@ -1338,17 +1323,14 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 			"\\nSPL example demonstrates the usage of the EventStoreSink operator:\\n" +
 		    "\\n    composite Main {"+
 		    "\\n        param"+
-		    "\\n            expression<rstring> $connectionString: getSubmissionTimeValue(\\\"connectionString\\\");"+
+		    "\\n            expression<rstring> $configObject: getSubmissionTimeValue(\\\"configObject\\\");"+
 		    "\\n            expression<int32>   $batchSize: (int32)getSubmissionTimeValue(\\\"batchSize\\\", \\\"1000\\\");"+
-		    "\\n            expression<rstring> $databaseName: getSubmissionTimeValue(\\\"databaseName\\\");"+
 		    "\\n            expression<rstring> $tableName: getSubmissionTimeValue(\\\"tableName\\\");"+
 		    "\\n            expression<rstring> $schemaName: getSubmissionTimeValue(\\\"schemaName\\\");"+
-		    "\\n            expression<rstring> $eventStoreUser: getSubmissionTimeValue(\\\"eventStoreUser\\\", \\\"\\\");"+
-		    "\\n            expression<rstring> $eventStorePassword: getSubmissionTimeValue(\\\"eventStorePassword\\\", \\\"\\\");"+ 
 		    "\\n    "+
 			"\\n        graph"+
 			"\\n    "+
-			"\\n            stream<rstring key, uint64 dummy> Rows = Beacon() {"+
+			"\\n            stream<rstring KEY, optional<int64> DUMMY> Rows = Beacon() {"+
 			"\\n                param"+
 			"\\n                    period: 0.01;"+
 			"\\n                output"+
@@ -1357,14 +1339,14 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 			"\\n    "+
 			"\\n            () as Db2EventStoreSink = com.ibm.streamsx.eventstore::EventStoreSink(Rows) {"+
 			"\\n                param"+
+			"\\n                    configObject: $configObject;"+
+			"\\n                    keyStore: 'opt/clientkeystore';"+
+			"\\n                    trustStore: 'opt/clientkeystore';"+
 			"\\n                    batchSize: $batchSize;"+
-			"\\n                    connectionString: $connectionString;"+
-			"\\n                    databaseName: $databaseName;"+
-			"\\n                    primaryKey: 'key';"+
+			"\\n                    primaryKey: 'KEY';"+
+			"\\n                    partitioningKey: 'KEY';"+
 			"\\n                    tableName: $tableName;"+
 			"\\n                    schemaName: $schemaName;"+
-			"\\n                    eventStoreUser: $eventStoreUser;"+
-			"\\n                    eventStorePassword: $eventStorePassword;"+
 			"\\n            }"+
 			"\\n    }"+	
 			"\\n"			

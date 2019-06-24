@@ -31,7 +31,7 @@ object EventStoreSinkImpl {
   def mkWriter(databaseName : String, tableName: String, schemaName: String,
 		connectionString: String,
                 frontEndConnectionFlag : Boolean,
-		streamSchema: StreamSchema, nullMapString: String,
+		streamSchema: StreamSchema,
                 eventStoreUser: String, eventStorePassword: String,
                 partitioningKey: String, primaryKey: String,
                 sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String,
@@ -50,7 +50,7 @@ object EventStoreSinkImpl {
       log.trace( "CONNECTION info ****** databaseName= " + databaseName +
 	" tablename= " + tableName )
       new EventStoreSinkImpl(databaseName, tableName, schemaName,
-		connectionString, frontEndConnectionFlag, streamSchema, nullMapString, 
+		connectionString, frontEndConnectionFlag, streamSchema, 
                 eventStoreUser, eventStorePassword,
                 partitioningKey, primaryKey,
                 sslConnection, trustStore, trustStorePassword, keyStore, keyStorePassword,
@@ -69,7 +69,7 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
                          connectionString: String, 
                          frontEndConnectionFlag: Boolean, 
                          streamSchema: StreamSchema,
-                         nullMapString: String, eventStoreUser: String, eventStorePassword: String,
+                         eventStoreUser: String, eventStorePassword: String,
                          partitioningKey: String, primaryKey: String,
                          sslConnection: Boolean, trustStore: String, trustStorePassword: String, keyStore: String, keyStorePassword: String,
                          pluginName: String, pluginFlag: Boolean) {
@@ -77,7 +77,6 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
 
   var context: EventContext = null
   var tableToInsert : ResolvedTableSchema = null
-  var nullMap : Map[String, Any] = Map.empty[String, Any]
   var conversionFunctionMap : scala.collection.mutable.HashMap[Int,(Tuple, Int) => Any] = null
 
   import org.apache.log4j.{Level, LogManager}
@@ -123,15 +122,9 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
      } 
 
      // Now validate the schema between the input stream and the EventStore table
-     log.info( "EventStore null map string is: " + nullMapString)
-     nullMap = obtainNullMap(nullMapString)
-     log.info( "EventStore null map is: " + nullMap)
      validateSchemas(streamSchema, tableToInsert.schema)
      conversionFunctionMap = ConversionAPIObject.createConversionFunctions(streamSchema)
 
-     // Remove columns in the nullMap that are not nullable
-     nullMap = removeNonNullables(nullMap, tableToInsert.schema)
-     log.info( "EventStore null map after removal of non-nullable columns is: " + nullMap)
   } catch {
      case e: Exception => {
 	if( context == null ){
@@ -232,37 +225,6 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
      //}
   }
 
-  // Obtain a null mapping from column name to the value that represents null
-  def obtainNullMap(nullMapStr: String): Map[String, Any] = {
-    try {
-      nullMapStr match {
-        case null | "" => Map.empty[String, Any]
-        case _ => {
-          val x: Any = JSON.parseFull(nullMapStr).getOrElse(throw EventStoreWriterException("Unable to parse null value JSON"))
-          x.asInstanceOf[Map[String, Any]]
-        }
-      }
-    } catch {
-      case e: Exception => {
-        log.error( "Count not parse the nullMapString: " + nullMapStr )
-        Map.empty[String, Any]
-      }
-    }
-  }
-
-  // Remove columns in nullMap that are non-nullable
-  def removeNonNullables(oldNullMap: Map[String, Any], tableSchema: StructType): Map[String, Any] = {
-    var newNullMap = oldNullMap
-    if( !newNullMap.isEmpty ){
-      for( field <- tableSchema.fields ){
-        if( !field.nullable ){
-      	  newNullMap = newNullMap.filterKeys(_ != field.name)
-	}
-      }
-    }
-    newNullMap
-  }
-
   // Make sure that the stream schema and the table schemas are of the same data types in the 
   // same order. If not then signal an exception since we should not be allowed to 
   // insert to the table as a result.
@@ -290,11 +252,11 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
     var rowSize : Int = 0 
     for(i <- 0 until streamSchema.getAttributeCount){
       rowSize += { streamSchema.getAttribute(i).getType.getLanguageType match {
-        case "boolean" => 1
-        case "int8"  | "uint8" => 1
-        case "int16" | "uint16" => 2
-        case "int32" | "uint32" => 4
-        case "float32" => 4
+        case "boolean"  | "optional<boolean>" => 1
+        case "int8"  | "uint8"  | "optional<int8>" | "optional<uint8>" => 1
+        case "int16" | "uint16" | "optional<int16>" | "optional<uint16>" => 2
+        case "int32" | "uint32" | "optional<int32>" | "optional<uint32>" => 4
+        case "float32" | "optional<float32>" => 4
         case _ => 8
        }
       }
@@ -312,9 +274,10 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
     try {
       // Table the Stream schema attributes and convert them to schema attribute types
       // for converting it to a EventStore schema
+      // Set nullable to true in StructField if SPL attribute is optional type
       val fields = (0 until streamSchema.getAttributeCount).
         map(i => streamSchema.getAttribute(i)).map(
-        attr => StructField(attr.getName, convertStreamType(attr.getType), false)).toSeq
+        attr => StructField(attr.getName, convertStreamType(attr.getType), attr.getType.getLanguageType.toUpperCase().contains("OPTIONAL"))).toSeq
       log.info( "NEW FIELDS = " + fields )
       val newStruct = StructType(fields)
       log.info( "New schema for table " + tableName + " is : " + newStruct)
@@ -389,19 +352,20 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
       }
   }
 
+
   // Convert the IBM streams schema to a EventStore schema where by default we make all nullable
   def convertStreamType(attrType: Type): DataType = {
     attrType.getLanguageType match {
-      case "boolean" => BooleanType
-      case "int8"  | "uint8" => ByteType
-      case "int16" | "uint16" => ShortType
-      case "int32" | "uint32" => IntegerType
-      case "int64" | "uint64" => LongType
-      case "float32" => FloatType
-      case "float64" => DoubleType
+      case "boolean" | "optional<boolean>" => BooleanType
+      case "int8"  | "uint8" | "optional<int8>" | "optional<uint8>" => ByteType
+      case "int16" | "uint16" | "optional<int16>" | "optional<uint16>" => ShortType
+      case "int32" | "uint32" | "optional<int32>" | "optional<uint32>" => IntegerType
+      case "int64" | "uint64" | "optional<int64>" | "optional<uint64>" => LongType
+      case "float32" | "optional<float32>" => FloatType
+      case "float64" | "optional<float64>" => DoubleType
       //case "decimal32" | "decimal64" | "decimal128" => DecimalType
-      case "timestamp" => TimestampType
-      case "rstring" | "ustring" => StringType
+      case "timestamp" | "optional<timestamp>" => TimestampType
+      case "rstring" | "ustring" | "optional<rstring>" | "optional<ustring>"  => StringType
       //case "blob" => tuple.getBlob(attr.getIndex)
       //case "xml" => tuple.getXML(attr.getIndex).toString //Cassandra doesn't have XML as data type, thank goodness
       case l if l.startsWith("list") => {
@@ -474,35 +438,45 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
     Row.fromSeq(fields)
   }
 
-  // Determine if the column's value is a null value and if so
-  // return true
-  def isColumnValueNull[T]( attr: Attribute, value: T ) : T = {
-     var returnVal : T = value
+  def getOptionalValue[T](tuple: Tuple, attr: Attribute, value: T ) : T = {
+    var returnVal : T = null.asInstanceOf[T]
 
-     if( nullMap.contains(attr.getName) ){
-       try {
-         val nullValue : T = nullMap(attr.getName).asInstanceOf[T]; 
-         if( nullValue == value ) returnVal = null.asInstanceOf[T]
-       } catch { case e: Exception => 
-         //log.error("Ignore the null value for attribute " + attr.getName )
-       }
-    }
+    if ((tuple.getOptional(attr.getIndex, attr.getType().getAsCompositeElementType()).isPresent()))
+      returnVal = tuple.getOptional(attr.getIndex, attr.getType().getAsCompositeElementType()).get().asInstanceOf[T]
+
+    returnVal
+  }
+
+  def getOptionalTimestamp(tuple: Tuple, attr: Attribute) : java.sql.Timestamp = {
+    var returnVal : java.sql.Timestamp = null.asInstanceOf[java.sql.Timestamp]
+
+    if ((tuple.getOptional(attr.getIndex, attr.getType().getAsCompositeElementType()).isPresent()))
+      returnVal = tuple.getOptional(attr.getIndex, attr.getType().getAsCompositeElementType()).get().asInstanceOf[com.ibm.streams.operator.types.Timestamp].getSQLTimestamp()
 
     returnVal
   }
 
   def getValueFromTuple(tuple: Tuple, attr: Attribute): Any = {
     val value: Any = attr.getType.getLanguageType match {
-      case "boolean" => { val value: Boolean = tuple.getBoolean(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "int8"  | "uint8" => { val value: Byte = tuple.getByte(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "int16" | "uint16" => { val value: Short = tuple.getShort(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "int32" | "uint32" => { val value: Int = tuple.getInt(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "int64" | "uint64" => { val value: Long = tuple.getLong(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "float32" => { val value: Float = tuple.getFloat(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "float64" => { val value: Double = tuple.getDouble(attr.getIndex); isColumnValueNull( attr, value ) }
+      case "boolean" => { val value: Boolean = tuple.getBoolean(attr.getIndex); value }
+      case "optional<boolean>" => { val value: Boolean = getOptionalValue(tuple, attr, null.asInstanceOf[Boolean]); value }
+      case "int8"  | "uint8" => { val value: Byte = tuple.getByte(attr.getIndex); value }
+      case "optional<int8>" | "optional<uint8>" => { val value: Byte = getOptionalValue(tuple, attr, null.asInstanceOf[Byte]); value }
+      case "int16" | "uint16" => { val value: Short = tuple.getShort(attr.getIndex); value }
+      case "optional<int16>" | "optional<uint16>" => { val value: Short = getOptionalValue(tuple, attr, null.asInstanceOf[Short]); value }
+      case "int32" | "uint32" => { val value: Int = tuple.getInt(attr.getIndex); value }
+      case "optional<int32>" | "optional<uint32>" => { val value: Int = getOptionalValue(tuple, attr, null.asInstanceOf[Int]); value }
+      case "int64" | "uint64" => { val value: Long = tuple.getLong(attr.getIndex); value }
+      case "optional<int64>" | "optional<uint64>" => { val value: Long = getOptionalValue(tuple, attr, null.asInstanceOf[Long]); value }
+      case "float32" => { val value: Float = tuple.getFloat(attr.getIndex); value }
+      case "optional<float32>" => { val value: Float = getOptionalValue(tuple, attr, null.asInstanceOf[Float]); value }
+      case "float64" => { val value: Double = tuple.getDouble(attr.getIndex); value }
+      case "optional<float64>" => { val value: Double = getOptionalValue(tuple, attr, null.asInstanceOf[Double]); value }
       //case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
-      case "timestamp" => { val value: java.sql.Timestamp = new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime()); isColumnValueNull( attr, value ) }
-      case "rstring" | "ustring" => { val value: String = tuple.getString(attr.getIndex); isColumnValueNull( attr, value ) }
+      case "timestamp" => { val value: java.sql.Timestamp = new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime()); value }
+      case "optional<timestamp>" => { val value: java.sql.Timestamp = getOptionalTimestamp(tuple, attr); value }
+      case "rstring" | "ustring" => { val value: String = tuple.getString(attr.getIndex); value }
+      case "optional<rstring>" | "optional<ustring>" => { val value: String = getOptionalValue(tuple, attr, null.asInstanceOf[String]); value }
       //case "blob" => tuple.getBlob(attr.getIndex)
       //case "xml" => tuple.getXML(attr.getIndex).toString //Cassandra doesn't have XML as data type, thank goodness
       case l if l.startsWith("list") => mkList(tuple, attr)
@@ -561,35 +535,10 @@ object ConversionAPIObject {
   protected val log = Logger.getLogger("ConversionAPIObject")
 
   var tableToInsert : ResolvedTableSchema = null
-  var nullMap : Map[String, Any] = Map.empty[String, Any]
 
   def setTableSchema(tableSchema : ResolvedTableSchema) : Unit = {
     log.info( "Set EventStore table schema: " + tableSchema)
     tableToInsert = tableSchema
-  }
-
-  def setUpNullMap(nullMapStr: String) : Unit = {
-    log.info( "EventStore null map string is: " + nullMapStr)
-    nullMap = obtainNullMap(nullMapStr)
-    log.info( "EventStore null map is: " + nullMap)
-  }
-
-  // Obtain a null mapping from column name to the value that represents null
-  def obtainNullMap(nullMapStr: String): Map[String, Any] = {
-    try {
-      nullMapStr match {
-        case null | "" => Map.empty[String, Any]
-        case _ => {
-          val x: Any = JSON.parseFull(nullMapStr).getOrElse(throw EventStoreWriterException("Unable to parse null value JSON"))
-          x.asInstanceOf[Map[String, Any]]
-        }
-      }
-    } catch {
-      case e: Exception => {
-        log.error( "Count not parse the nullMapString: " + nullMapStr )
-        Map.empty[String, Any]
-      }
-    }
   }
 
   // Make sure that the stream schema and the table schemas are of the same data types in the
@@ -615,11 +564,11 @@ object ConversionAPIObject {
     var rowSize : Int = 0
     for(i <- 0 until streamSchema.getAttributeCount){
       rowSize += { streamSchema.getAttribute(i).getType.getLanguageType match {
-        case "boolean" => 1
-        case "int8"  | "uint8" => 1
-        case "int16" | "uint16" => 2
-        case "int32" | "uint32" => 4
-        case "float32" => 4
+        case "boolean" | "optional<boolean>" => 1
+        case "int8"  | "uint8" | "optional<int8>" | "optional<uint8>" => 1
+        case "int16" | "uint16" | "optional<int16>" | "optional<uint16>" => 2
+        case "int32" | "uint32" | "optional<int32>" | "optional<uint32>" => 4
+        case "float32" | "optional<float32>" => 4
         case _ => 8
       }
       }
@@ -639,7 +588,7 @@ object ConversionAPIObject {
       // for converting it to a EventStore schema
       val fields = (0 until streamSchema.getAttributeCount).
         map(i => streamSchema.getAttribute(i)).map(
-        attr => StructField(attr.getName, convertStreamType(attr.getType), false)).toSeq
+        attr => StructField(attr.getName, convertStreamType(attr.getType), attr.getType.getLanguageType.toUpperCase().contains("OPTIONAL"))).toSeq
       log.info( "NEW FIELDS = " + fields )
       val newStruct = StructType(fields)
       log.info( "New schema for table " + tableName + " is : " + newStruct)
@@ -711,16 +660,16 @@ object ConversionAPIObject {
   // Convert the IBM streams schema to a EventStore schema where by default we make all nullable
   def convertStreamType(attrType: Type): DataType = {
     attrType.getLanguageType match {
-      case "boolean" => BooleanType
-      case "int8"  | "uint8" => ByteType
-      case "int16" | "uint16" => ShortType
-      case "int32" | "uint32" => IntegerType
-      case "int64" | "uint64" => LongType
-      case "float32" => FloatType
-      case "float64" => DoubleType
+      case "boolean" | "optional<boolean>" => BooleanType
+      case "int8"  | "uint8" | "optional<int8>" | "optional<uint8>" => ByteType
+      case "int16" | "uint16" | "optional<int16>" | "optional<uint16>" => ShortType
+      case "int32" | "uint32" | "optional<int32>" | "optional<uint32>" => IntegerType
+      case "int64" | "uint64" | "optional<int64>" | "optional<uint64>" => LongType
+      case "float32" | "optional<float32>" => FloatType
+      case "float64" | "optional<float64>" => DoubleType
       //case "decimal32" | "decimal64" | "decimal128" => DecimalType
-      case "timestamp" => TimestampType
-      case "rstring" | "ustring" => StringType
+      case "timestamp" | "optional<timestamp>" => TimestampType
+      case "rstring" | "ustring" | "optional<rstring>" | "optional<ustring>" => StringType
       //case "blob" => tuple.getBlob(attr.getIndex)
       //case "xml" => tuple.getXML(attr.getIndex).toString //Cassandra doesn't have XML as data type, thank goodness
       case l if l.startsWith("list") => {
@@ -755,35 +704,46 @@ object ConversionAPIObject {
     Row.fromSeq(fields)
   }
 
-  // Determine if the column's value is a null value and if so
-  // return true
-  def isColumnValueNull[T]( attr: Attribute, value: T ) : T = {
-    var returnVal : T = value
 
-    if( nullMap.contains(attr.getName) ){
-      try {
-        val nullValue : T = nullMap(attr.getName).asInstanceOf[T];
-        if( nullValue == value ) returnVal = null.asInstanceOf[T]
-      } catch { case e: Exception =>
-        log.error("Ignore the null value for attribute " + attr.getName )
-      }
-    }
+  def getOptionalValue[T](tuple: Tuple, attr: Attribute, value: T ) : T = {
+    var returnVal : T = null.asInstanceOf[T]
+
+    if ((tuple.getOptional(attr.getIndex, attr.getType().getAsCompositeElementType()).isPresent()))
+      returnVal = tuple.getOptional(attr.getIndex, attr.getType().getAsCompositeElementType()).get().asInstanceOf[T]
 
     returnVal
   }
 
-  def getValueFromTuple( tuple: Tuple, attr: Attribute ): Any = {
+  def getOptionalTimestamp(tuple: Tuple, attr: Attribute) : java.sql.Timestamp = {
+    var returnVal : java.sql.Timestamp = null.asInstanceOf[java.sql.Timestamp]
+
+    if ((tuple.getOptional(attr.getIndex, attr.getType().getAsCompositeElementType()).isPresent()))
+      returnVal = tuple.getOptional(attr.getIndex, attr.getType().getAsCompositeElementType()).get().asInstanceOf[com.ibm.streams.operator.types.Timestamp].getSQLTimestamp()
+
+    returnVal
+  }
+
+  def getValueFromTuple(tuple: Tuple, attr: Attribute): Any = {
     val value: Any = attr.getType.getLanguageType match {
-      case "boolean" => { val value: Boolean = tuple.getBoolean(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "int8"  | "uint8" => { val value: Byte = tuple.getByte(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "int16" | "uint16" => { val value: Short = tuple.getShort(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "int32" | "uint32" => { val value: Int = tuple.getInt(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "int64" | "uint64" => { val value: Long = tuple.getLong(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "float32" => { val value: Float = tuple.getFloat(attr.getIndex); isColumnValueNull( attr, value ) }
-      case "float64" => { val value: Double = tuple.getDouble(attr.getIndex); isColumnValueNull( attr, value ) }
+      case "boolean" => { val value: Boolean = tuple.getBoolean(attr.getIndex); value }
+      case "optional<boolean>" => { val value: Boolean = getOptionalValue(tuple, attr, null.asInstanceOf[Boolean]); value }
+      case "int8"  | "uint8" => { val value: Byte = tuple.getByte(attr.getIndex); value }
+      case "optional<int8>" | "optional<uint8>" => { val value: Byte = getOptionalValue(tuple, attr, null.asInstanceOf[Byte]); value }
+      case "int16" | "uint16" => { val value: Short = tuple.getShort(attr.getIndex); value }
+      case "optional<int16>" | "optional<uint16>" => { val value: Short = getOptionalValue(tuple, attr, null.asInstanceOf[Short]); value }
+      case "int32" | "uint32" => { val value: Int = tuple.getInt(attr.getIndex); value }
+      case "optional<int32>" | "optional<uint32>" => { val value: Int = getOptionalValue(tuple, attr, null.asInstanceOf[Int]); value }
+      case "int64" | "uint64" => { val value: Long = tuple.getLong(attr.getIndex); value }
+      case "optional<int64>" | "optional<uint64>" => { val value: Long = getOptionalValue(tuple, attr, null.asInstanceOf[Long]); value }
+      case "float32" => { val value: Float = tuple.getFloat(attr.getIndex); value }
+      case "optional<float32>" => { val value: Float = getOptionalValue(tuple, attr, null.asInstanceOf[Float]); value }
+      case "float64" => { val value: Double = tuple.getDouble(attr.getIndex); value }
+      case "optional<float64>" => { val value: Double = getOptionalValue(tuple, attr, null.asInstanceOf[Double]); value }
       //case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
-      case "timestamp" => { val value: java.sql.Timestamp = new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime()); isColumnValueNull( attr, value ) }
-      case "rstring" | "ustring" => { val value: String = tuple.getString(attr.getIndex); isColumnValueNull( attr, value ) }
+      case "timestamp" => { val value: java.sql.Timestamp = new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime()); value }
+      case "optional<timestamp>" => { val value: java.sql.Timestamp = getOptionalTimestamp(tuple, attr); value }
+      case "rstring" | "ustring" => { val value: String = tuple.getString(attr.getIndex); value }
+      case "optional<rstring>" | "optional<ustring>" => { val value: String = getOptionalValue(tuple, attr, null.asInstanceOf[String]); value }
       //case "blob" => tuple.getBlob(attr.getIndex)
       //case "xml" => tuple.getXML(attr.getIndex).toString //Cassandra doesn't have XML as data type, thank goodness
       case l if l.startsWith("list") => mkList(tuple, attr)
@@ -794,6 +754,7 @@ object ConversionAPIObject {
     value
   }
 
+
   // Make sure that the stream schema and the table schemas are of the same data types in the
   // same order. If not then signal an exception since we should not be allowed to
   // insert to the table as a result.
@@ -803,16 +764,16 @@ object ConversionAPIObject {
       for(i <- 0 until streamSchema.getAttributeCount){
         val attr = streamSchema.getAttribute(i)
         val func = attr.getType.getLanguageType match {
-          case "boolean" => { val f = (tuple: Tuple, i: Int) => {tuple.getBoolean(i)}; f }
-          case "int8"  | "uint8" => { val f = (tuple: Tuple, i: Int) => {tuple.getByte(i)}; f }
-          case "int16" | "uint16" => { val f = (tuple: Tuple, i: Int) => {tuple.getShort(i)}; f }
-          case "int32" | "uint32" => { val f = (tuple: Tuple, i: Int) => {tuple.getInt(i)}; f }
-          case "int64" | "uint64" => { val f = (tuple: Tuple, i: Int) => {tuple.getLong(i)}; f }
-          case "float32" => { val f = (tuple: Tuple, i: Int) => {tuple.getFloat(i)}; f }
-          case "float64" => { val f = (tuple: Tuple, i: Int) => {tuple.getDouble(i)}; f }
+          case "boolean" | "optional<boolean>" => { val f = (tuple: Tuple, i: Int) => {tuple.getBoolean(i)}; f }
+          case "int8"  | "uint8" | "optional<int8>" | "optional<uint8>" => { val f = (tuple: Tuple, i: Int) => {tuple.getByte(i)}; f }
+          case "int16" | "uint16" | "optional<int16>" | "optional<uint16>" => { val f = (tuple: Tuple, i: Int) => {tuple.getShort(i)}; f }
+          case "int32" | "uint32" | "optional<int32>" | "optional<uint32>" => { val f = (tuple: Tuple, i: Int) => {tuple.getInt(i)}; f }
+          case "int64" | "uint64" | "optional<int64>" | "optional<uint64>" => { val f = (tuple: Tuple, i: Int) => {tuple.getLong(i)}; f }
+          case "float32" | "optional<float32>" => { val f = (tuple: Tuple, i: Int) => {tuple.getFloat(i)}; f }
+          case "float64" | "optional<float64>" => { val f = (tuple: Tuple, i: Int) => {tuple.getDouble(i)}; f }
           //case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
-          case "timestamp" => { val f = (tuple: Tuple, i: Int) => {new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime())}; f }
-          case "rstring" | "ustring" => { val f = (tuple: Tuple, i: Int) => {tuple.getString(i)}; f }
+          case "timestamp" | "optional<timestamp>" => { val f = (tuple: Tuple, i: Int) => {new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime())}; f }
+          case "rstring" | "ustring" | "optional<rstring>" | "optional<ustring>" => { val f = (tuple: Tuple, i: Int) => {tuple.getString(i)}; f }
           //case "blob" => tuple.getBlob(attr.getIndex)
           //case "xml" => tuple.getXML(attr.getIndex).toString //Cassandra doesn't have XML as data type, thank goodness
           case l if l.startsWith("list") => { val f = (tuple: Tuple, i: Int) => {mkList(tuple, i)}; f }

@@ -7,3 +7,7 @@
 /com.ibm.streamsx.eventstore/com.ibm.streamsx.eventstore/EventStoreSink/EventStoreSink.xml
 /*RELEASE.tgz
 /tmp/
+
+
+.DS_Store
+/**/.DS_Store
