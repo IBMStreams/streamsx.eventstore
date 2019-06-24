@@ -22,7 +22,7 @@
 <div class="body refbody">
 <div class="section">
 <p class="p">
-<a class="xref" href="../toolkits/toolkits.html">IBMStreams streamsx.eventstore Toolkit</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 2.0.3</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; <a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink.html">EventStoreSink</a> &gt; Example</p>
+<a class="xref" href="../toolkits/toolkits.html">IBMStreams streamsx.eventstore Toolkit</a> &gt; <a class="xref" href="tk$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore 2.1.0</a> &gt; <a class="xref" href="ns$com.ibm.streamsx.eventstore.html">com.ibm.streamsx.eventstore</a> &gt; <a class="xref" href="op$com.ibm.streamsx.eventstore$EventStoreSink.html">EventStoreSink</a> &gt; Example</p>
 
 </div>
 
@@ -35,17 +35,14 @@
 <pre class="pre codeblock">
 composite Main {
     param
-        expression&lt;rstring&gt; $connectionString: getSubmissionTimeValue("connectionString");
+        expression&lt;rstring&gt; $configObject: getSubmissionTimeValue("configObject");
         expression&lt;int32&gt;   $batchSize: (int32)getSubmissionTimeValue("batchSize", "1000");
-        expression&lt;rstring&gt; $databaseName: getSubmissionTimeValue("databaseName");
         expression&lt;rstring&gt; $tableName: getSubmissionTimeValue("tableName");
         expression&lt;rstring&gt; $schemaName: getSubmissionTimeValue("schemaName");
-        expression&lt;rstring&gt; $eventStoreUser: getSubmissionTimeValue("eventStoreUser", "");
-        expression&lt;rstring&gt; $eventStorePassword: getSubmissionTimeValue("eventStorePassword", "");
 
     graph
 
-        stream&lt;rstring key, uint64 dummy&gt; Rows = Beacon() {
+        stream&lt;rstring KEY, optional&lt;int64&gt; DUMMY&gt; Rows = Beacon() {
             param
                 period: 0.01;
             output
@@ -54,14 +51,14 @@ composite Main {
 
         () as Db2EventStoreSink = com.ibm.streamsx.eventstore::EventStoreSink(Rows) {
             param
+                configObject: $configObject;
+                keyStore: 'opt/clientkeystore';
+                trustStore: 'opt/clientkeystore';
                 batchSize: $batchSize;
-                connectionString: $connectionString;
-                databaseName: $databaseName;
-                primaryKey: 'key';
+                primaryKey: 'KEY';
+                partitioningKey: 'KEY';
                 tableName: $tableName;
                 schemaName: $schemaName;
-                eventStoreUser: $eventStoreUser;
-                eventStorePassword: $eventStorePassword;
         }
 }
 </pre>
