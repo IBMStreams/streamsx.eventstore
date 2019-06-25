@@ -140,7 +140,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     private String trustStorePassword = null;
     private boolean sslConnection = true;
     private boolean sslDebug = false;
-    private String pluginName = "IBMPrivateCloudAuth";
+    private String pluginName = "IBMIAMauth";
     private boolean pluginFlag = true;
     
     // Flag to specify if the optional tuple insert result port is used
@@ -982,7 +982,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 	
 	// Parameter pluginName
 	@Parameter(name = "pluginName", optional = true, 
-			description = "This parameter specifies the plug-in name for the SSL connection. The default value is `IBMPrivateCloudAuth`.")
+			description = "This parameter specifies the plug-in name for the SSL connection. The default value is `IBMIAMauth`.")
 	public void setPluginName(String pluginName) {
 		if (!("".equals(pluginName))) {
 			this.pluginName = pluginName;
