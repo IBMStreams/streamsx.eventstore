@@ -24,7 +24,7 @@
           <fileset dir="${basedir}" includes="tmp/"/>
         </delete>
         <delete includeemptydirs="true">
-          <fileset dir="${toolkit}" includes="doc/"/>
+          <fileset dir="${toolkit}" includes="doc/en_US"/>
         </delete>
   	<ant dir="${toolkit}" target="clean"/>
   	<ant dir="${test.dir}" target="clean"/>
@@ -97,6 +97,7 @@
      <echo message="Toolkit to SPLDOC: ${tkdir}"/>
      <exec executable="${streams.install}/bin/spl-make-doc">
         <arg value="--include-composite-operator-diagram"/>
+        <arg value="--copy-image-files"/>
         <arg value="--author"/>
         <arg value="IBMStreams Open Source Community at GitHub - https://github.com/IBMStreams/${ant.project.name}"/>
         <arg value="--doc-title"/>
