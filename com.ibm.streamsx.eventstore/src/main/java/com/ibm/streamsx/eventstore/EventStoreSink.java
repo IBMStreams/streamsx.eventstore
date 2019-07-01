@@ -95,6 +95,7 @@ import java.nio.file.Paths;
 EventStoreSink.operatorDescription +
 EventStoreSink.DATA_TYPES + 
 EventStoreSink.CR_DESC +
+EventStoreSink.APP_CONFIG_DESC +
 EventStoreSink.SPL_EXAMPLES_DESC
 )
 @InputPorts({@InputPortSet(
@@ -1235,12 +1236,14 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
 	static final String operatorDescription = 
 			"The EventStoreSink inserts IBM Streams tuples in to an IBM Db2 Event Store table."
+			+ "\\n\\nThis operator supports *consistent region* and *optional types*."
 			;
 	
 	static final String iport0Description =
 			"Port that ingests tuples which are inserted into Db2 Event Store database table. "
 			+ "The tuple field types and positions in the IBM Streams schema must match the field names in your IBM Db2 Event Store table schema exactly."
 			+ "Incoming tuples are processed in batches, where the processing will be to send rows to IBM Db2 Event Store, and is driven by the size of the batch. A batch is processed when it reaches at least the batch size."
+			+ "\\nIf you define the input Stream with attributes using optional type, then this operator writes 'null' to a nullable column in a table in case the optional attribute has no value set."
 			;
 
 	static final String oport0Description =
@@ -1349,7 +1352,17 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 			"\\n                    schemaName: $schemaName;"+
 			"\\n            }"+
 			"\\n    }"+	
-			"\\n"			
+			"\\n"+
+			"\\nIn the SPL example above the connection configuration and credentials are stored in an application configuration. You specify the name of the application configuration with the `configObject` parameter." +
+			"\\nIn the application configuration the following properties shall be set:\\n" +
+			"* connectionString\\n" +
+			"* databaseName\\n" +
+			"* eventStoreUser\\n" +
+			"* eventStorePassword\\n" +
+			"* keyStorePassword\\n" +
+			"* trustStorePassword\\n" +
+			"\\nThe `keyStorePassword` and `trustStorePassword` belong to the file referenced with the parameters `keyStore` and `trustStore`. In Event Store 2.0 the file stored in `opt/clientkeystore` contains both truststore and keystore.\\n" +
+			"\\n"
 			;	
 	
 	public static final String CR_DESC =
@@ -1366,6 +1379,42 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 			"\\n# Checkpoint and restore\\n"+
 			"\\nOn checkpoint, the values of the metrics (`nWriteSuccesses` and `nWriteFailures`) are written to the checkpoint.\\n" + 
 			"\\nOn reset, the internal buffer is cleared and metrics are restored with values that are read from checkpoint.\\n"
-			;	
+			;
+	
+	public static final String APP_CONFIG_DESC =
+			"\\n"+
+			"\\n+ Configure connection with application configuration" +
+			"\\n"+
+			"\\nThe connection can be configured with operator parameters or application configuration."+
+			"\\n"+
+			"\\nThe priority of the options is\\n"
+	        + "1. application configuration with properties, name of the application configuration is set with operator parameter `configObject`\\n"
+			+ "1. operator parameter, for example connectionString, databaseName etc. (ignored if set as property in application configuration)\\n"
+	        + "\\n"+
+    		"\\n" + 
+    		"When the operator starts, "
+    		+ "it will look for application configuration with the name set in parameter `configObject` and the operator extracts the information needed to connect. "
+    		+ "The following steps outline how this can be done: \\n" + 
+    		"\\n" + 
+    		" 1. Create an application configuration, for example called `EventStore`.\\n" + 
+    		" 2. Create properties in the `EventStore` application configuration:\\n" + 
+			"   * *connectionString* contains the connection URL(s)\\n" +
+			"   * *databaseName* contains the database name, for example EVENTDB\\n" +
+			"   * eventStoreUser\\n" +
+			"   * eventStorePassword\\n" +
+			"   * keyStorePassword\\n" +
+			"   * trustStorePassword\\n" +
+    		" 3. The operator will look for an application configuration named `EventStore` if name is set in operator parameter `configObject` and will extract "
+    		+ "the information needed to connect.\\n" +
+    		"\\n+ Connection information\\n"+
+    		"\\nThe operator requires two connection information, one for JDBC and one for the SCALA connection."+
+			"\\nThe following diagram demonstrates how to build the value for the `connectionString` parameter from the details page of your Event Store instance:\\n"+ 
+			"\\n{../../doc/images/access_information.png}"+
+			"\\n"+
+			"\\nFormat for the `connectionString` parameter: <IP:PORT from JDBC Connection URL>;<SCALA Connection URL>"+
+			"\\nFor example: `172.16.213.218:32350;172.16.214.136:30854,172.16.214.49:30854,172.16.214.91:30854`"+
+			"\\n"			
+	        ;	
+	
 }
 
