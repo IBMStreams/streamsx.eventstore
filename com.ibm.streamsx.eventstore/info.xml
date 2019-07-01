@@ -19,7 +19,7 @@ IBM Db2 Event Store is an in-memory database designed to rapidly ingest and anal
 * Nullable column with optional type support
 
 ]]></info:description>
-        <info:version>2.1.0</info:version>
+        <info:version>2.1.2</info:version>
         <info:requiredProductVersion>4.3.0.0</info:requiredProductVersion>
     </info:identity>
     <info:dependencies/>
