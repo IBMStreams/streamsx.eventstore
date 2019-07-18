@@ -9,11 +9,30 @@ Install the latest streamsx package with pip, a package manager for Python, by e
 
 ### Configure the connection to Event Store database
 
-    export EVENTSTORE_CONNECTION=<HOST>:1100
+    export EVENTSTORE_CONNECTION=<HOST:JDBCPORT>;<HOST:SCALAPORT>
 
 ### Configure the name of the Event Store database, for example
 
     export EVENTSTORE_DB=TESTDB
+
+### Configure the connection credentials
+
+    export EVENTSTORE_USER=XXXXXX
+
+    export EVENTSTORE_PASSWORD=XXXXXXX
+
+### Configure the SSL connection
+
+    export EVENTSTORE_KEYSTORE_PASSWORD=XXXXXXXXXXXX
+
+    export EVENTSTORE_TRUSTSTORE_PASSWORD=XXXXXXXXXXXX
+
+Path to truststore and keystore file, for example:
+
+    export EVENTSTORE_KEYSTORE=/tmp/clientkeystore
+
+    export EVENTSTORE_TRUSTSTORE=/tmp/clientkeystore
+
 
 ### Optionally configure the location of the Event Store toolkit, for example
 
@@ -45,5 +64,10 @@ Example for running a single test case:
 ### ICP Test
 
     python3 -u -m unittest test_eventstore.TestICP
+
+Example for running a single test case:
+
+    python3 -u -m unittest test_eventstore.TestICP.test_insert_sample_batch_complete
+
 
 
