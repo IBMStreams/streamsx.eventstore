@@ -61,7 +61,9 @@
             <arg value="-u"/>
             <arg value="-m"/>
             <arg value="unittest"/>
-            <arg value="test_eventstore.TestDistributed"/>
+            <arg value="test_compile.Test.test_compile_time_error_checkpoint_periodic"/>
+            <arg value="test_compile.Test.test_compile_time_error_checkpoint_operator_driven"/>
+            <arg value="test_compile.Test.test_compile_time_error_consistent_region_unsupported_configuration"/>
         </exec>
     </target>
 

@@ -18,8 +18,16 @@ IBM Db2 Event Store is an in-memory database designed to rapidly ingest and anal
 * SSL connection
 * Nullable column with optional type support
 
++ What's new
+
+This is an overview of changes for major and minor version upgrades. For details, see the releases in public [https://github.com/IBMStreams/streamsx.eventstore/releases|GitHub].
+
+++ What is new in version 2.2.0
+
+* Supports globalized messages with unique message IDs
+
 ]]></info:description>
-        <info:version>2.1.3</info:version>
+        <info:version>2.2.0</info:version>
         <info:requiredProductVersion>4.3.0.0</info:requiredProductVersion>
     </info:identity>
     <info:dependencies/>

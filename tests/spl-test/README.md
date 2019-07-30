@@ -40,7 +40,9 @@ Path to truststore and keystore file, for example:
 
 If `STREAMSX_EVENTSTORE_TOOLKIT` is not set, then the toolkit in the repository is used.
 
-# Run the tests with local Streams instance
+
+## Run the tests with local installed Streams (compile tests only)
+
 ```
 ant test
 ```
@@ -52,22 +54,27 @@ Delete generated files of test suites.
 ant clean
 ```
 
-### Local Streams Test
 
-    python3 -u -m unittest test_eventstore.TestDistributed
+## Run the tests with remote Streams (Cloud Pak for Data)
 
-Example for running a single test case:
+```
+ant testicp
+```
 
-    python3 -u -m unittest test_eventstore.TestDistributed.test_insert_sample_batch_complete
-
-
-### ICP Test
+or run ICP Test with following commands:
 
     python3 -u -m unittest test_eventstore.TestICP
 
 Example for running a single test case:
 
     python3 -u -m unittest test_eventstore.TestICP.test_insert_sample_batch_complete
+
+# Clean-up
+
+Delete generated files of test suites.
+```
+ant clean
+```
 
 
 

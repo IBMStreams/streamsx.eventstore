@@ -15,6 +15,7 @@
   <property name="toolkit" location="com.ibm.streamsx.eventstore"/>
   <property name="test.dir" location="tests/spl-test"/>
   <property name="tmp" location="tmp" />
+  <property name="toolkit.test" location="tests/spl-test" />
 	
 	
   <target name="all" depends="toolkit,spldoc"/>
@@ -63,6 +64,10 @@
         <arg value="Makefile" />
         <arg value="clean" />
      </exec>
+  </target>
+
+  <target name="test" depends="build-all-samples">
+     <ant dir="${toolkit.test}" target="test"/>
   </target>
 
   <target name="build-all-samples" depends="toolkit">

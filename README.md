@@ -24,11 +24,14 @@ Developer 1.1.4	            | 1.x  | 1.x |
 For more information on installing IBM Db2 Event Store, see:
 <https://www.ibm.com/support/knowledgecenter/SSGNPV>
 
-
 ## Documentation
 
 * [Build the toolkit](BUILD.md)
 * [SPLDoc](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc2.0/html/)
 * [Python package documentation](http://streamsxeventstore.readthedocs.io)
+
+### Remark
+
+This toolkit implements the NLS feature. Use the guidelines for the message bundle that are described in the [Messages and National Language Support for toolkits](https://github.com/IBMStreams/administration/wiki/Messages-and-National-Language-Support-for-toolkits) document.
 
 
