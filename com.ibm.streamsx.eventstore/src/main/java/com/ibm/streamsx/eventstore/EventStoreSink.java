@@ -58,6 +58,7 @@ import com.ibm.streams.operator.state.ConsistentRegionContext;
 import com.ibm.streams.operator.state.StateHandler;
 import com.ibm.streams.operator.log4j.TraceLevel;
 import com.ibm.streams.operator.model.Libraries;
+import com.ibm.streamsx.eventstore.i18n.Messages;
 
 import com.ibm.streamsx.eventstore.EventStoreSinkImpl;
 //import com.ibm.streamsx.eventstore.EventStoreSinkJImplObject;
@@ -234,10 +235,10 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 		CheckpointContext chkptContext = opContext.getOptionalContext(CheckpointContext.class);
 		if (chkptContext != null) {
 			if (chkptContext.getKind().equals(CheckpointContext.Kind.OPERATOR_DRIVEN)) {
-				checker.setInvalidContext("The following operator does not support 'operatorDriven' checkpoint configuration: EventStoreSink", null);
+				checker.setInvalidContext(Messages.getString("EVENTSTORE_NOT_CHECKPOINT_OPERATOR_DRIVEN", "EventStoreSink"), null);
 			}
 			if (chkptContext.getKind().equals(CheckpointContext.Kind.PERIODIC)) {
-				checker.setInvalidContext("The following operator does not support 'periodic' checkpoint configuration: EventStoreSink", null);
+				checker.setInvalidContext(Messages.getString("EVENTSTORE_NOT_CHECKPOINT_PERIODIC", "EventStoreSink"), null);
 			}			
 		}
 	}
@@ -250,7 +251,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 		ConsistentRegionContext crContext = opContext.getOptionalContext(ConsistentRegionContext.class);
 		if (crContext != null) {
 			if (crContext.isStartOfRegion()) {
-				checker.setInvalidContext("The following operator cannot be the start of a consistent region when an input port is present: EventStoreSink", null); 
+				checker.setInvalidContext(Messages.getString("EVENTSTORE_NOT_CONSISTENT_REGION_START", "EventStoreSink"), null); 
 			}
 		}
 	}    
@@ -796,8 +797,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
             description="Specifies the batch size for the number of rows that will be batched in the operator before the batch is inserted into IBM Db2 Event Store by using the `batchInsertAsync` method. If you do not specify this parameter, the batchSize defaults to the estimated number of rows that could fit into an 8K memory page.")
     public synchronized void setBatchSize(int batchSize) throws Exception {
         if (batchSize <= 0)
-            throw new IllegalArgumentException(
-                    "Sink batchSize must be not be zero or negative.");
+            throw new IllegalArgumentException(Messages.getString("EVENTSTORE_INVALID_VALUE_BATCHSIZE"));
 
         this.batchSize = batchSize;
         batchSizeParmSet = true;
