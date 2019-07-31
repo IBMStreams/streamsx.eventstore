@@ -266,27 +266,25 @@ class TestDistributed(unittest.TestCase):
         schema=StreamSchema('tuple<int32 id, rstring name>').as_tuple()
         return s.map(lambda x : (x,'X'+str(x*2)), schema=schema)
 
-    def test_insert_udp(self):
-        print ('\n---------'+str(self))
-        topo = Topology('test_insert_udp')
-        self._add_toolkits(topo, None)
-        s = self._create_stream(topo)
-        result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
-        # user-defined parallelism with two channels (two EventStoreSink operators)
-        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', partitioning_key='id', front_end_connection_flag=self.front_end_connection_flag, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)      
-        res.print()
-
-        #self._build_only('test_insert_udp', topo)
-        tester = Tester(topo)
-        tester.run_for(120)
-        tester.tuple_count(res, 20, exact=True)
-
-        cfg = {}
-        job_config = streamsx.topology.context.JobConfig(tracing='info')
-        job_config.add(cfg)
-        cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
-        tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
-        print (str(tester.result))
+#    def test_insert_udp(self):
+#        print ('\n---------'+str(self))
+#        topo = Topology('test_insert_udp')
+#        self._add_toolkits(topo, None)
+#        s = self._create_stream(topo)
+#        result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
+#        # user-defined parallelism with two channels (two EventStoreSink operators)
+#        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', partitioning_key='id', front_end_connection_flag=self.front_end_connection_flag, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)      
+#        res.print()
+#        #self._build_only('test_insert_udp', topo)
+#        tester = Tester(topo)
+#        tester.run_for(120)
+#        tester.tuple_count(res, 20, exact=True)
+#        cfg = {}
+#        job_config = streamsx.topology.context.JobConfig(tracing='info')
+#        job_config.add(cfg)
+#        cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
+#        tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
+#        print (str(tester.result))
 
 
     def test_insert_with_app_config(self):
@@ -310,46 +308,6 @@ class TestDistributed(unittest.TestCase):
         cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
         tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
         print (str(tester.result))
-
-
-    @unittest.skipIf(streams_install_env_var() == False, "Missing STREAMS_INSTALL environment variable.")
-    def test_compile_time_error_checkpoint_periodic(self):
-        print ('\n---------'+str(self))
-        if self.eventstore_toolkit_location is not None:
-            test_toolkit = 'compile.test'
-            self._index_tk(test_toolkit)
-            # compile test only
-            r = op.main_composite(kind='com.ibm.streamsx.eventstore.test::Test_checkpoint_periodic', toolkits=[self.eventstore_toolkit_location, test_toolkit])
-            rc = streamsx.topology.context.submit('BUNDLE', r[0])
-            #expect compile error
-            self.assertEqual(1, rc['return_code'])
-
-
-    @unittest.skipIf(streams_install_env_var() == False, "Missing STREAMS_INSTALL environment variable.")
-    def test_compile_time_error_checkpoint_operator_driven(self):
-        print ('\n---------'+str(self))
-        if self.eventstore_toolkit_location is not None:
-            test_toolkit = 'compile.test'
-            self._index_tk(test_toolkit)
-            # compile test only
-            r = op.main_composite(kind='com.ibm.streamsx.eventstore.test::Test_checkpoint_operatorDriven', toolkits=[self.eventstore_toolkit_location, test_toolkit])
-            rc = streamsx.topology.context.submit('BUNDLE', r[0])
-            #expect compile error
-            self.assertEqual(1, rc['return_code'])
-
-
-    @unittest.skipIf(streams_install_env_var() == False, "Missing STREAMS_INSTALL environment variable.")
-    def test_compile_time_error_consistent_region_unsupported_configuration(self):
-        print ('\n---------'+str(self))
-        if self.eventstore_toolkit_location is not None:
-            test_toolkit = 'compile.test'
-            self._index_tk(test_toolkit)
-            # compile test only
-            r = op.main_composite(kind='com.ibm.streamsx.eventstore.test::Test_consistent_region_unsupported_configuration', toolkits=[self.eventstore_toolkit_location, test_toolkit])
-            rc = streamsx.topology.context.submit('BUNDLE', r[0])
-            #expect compile error
-            self.assertEqual(1, rc['return_code'])
-
 
 
 class TestICP(TestDistributed):

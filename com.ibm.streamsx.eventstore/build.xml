@@ -113,7 +113,7 @@
 		<jar destfile="${impl.lib.dir}/${jarfile}" 
 			 basedir="${build.dir}"
 			 filesonly="true">
-			<fileset dir="${src.dir}"/>
+			<fileset dir="${src.dir}" includes="com/ibm/streamsx/eventstore/i18n/messages/*.properties"/>
 		</jar>
 		<delete dir="${build.dir}" />
 	</target>	
