@@ -47,8 +47,6 @@ class TestDistributed(unittest.TestCase):
             self.streams_username = os.environ['STREAMS_USERNAME']
         if os.environ.get('STREAMS_PASSWORD') is not None:
             self.streams_password = os.environ['STREAMS_PASSWORD']
-        if os.environ.get('STREAMS_REST_URL') is not None:
-            self.streams_resturl = os.environ['STREAMS_REST_URL']
 
         self.connection = os.environ['EVENTSTORE_CONNECTION']
         self.database = os.environ['EVENTSTORE_DB']
@@ -142,15 +140,7 @@ class TestDistributed(unittest.TestCase):
 
     def _create_app_config(self):
         if ("TestICP" in str(self) or streams_install_env_var() is False):
-            instance_name = self.streams_resturl.split('/').pop()
-            print ("Create eventstore application configuration with REST to instance: "+ instance_name)
-            url = urlparse(self.streams_resturl)
-            resturl = 'https://'+url.netloc+'/streams/rest/resources'
-            # get instance
-            print ('Input: '+self.streams_username+ ' ' + self.streams_password+ ' ' + resturl)
-            sc = sr.StreamsConnection(self.streams_username,self.streams_password,resturl)
-            sc.session.verify=False
-            instance = sc.get_instance(instance_name)
+            instance = streamsx.rest_primitives.Instance.of_endpoint(verify=False)
             res = es.configure_connection(instance, database=self.database, connection=self.connection, user=self.es_user, password=self.es_password, keystore_password=self.es_keystore_password, truststore_password=self.es_truststore_password)
             print (str(res))
         else:
@@ -290,7 +280,7 @@ class TestDistributed(unittest.TestCase):
     def test_insert_with_app_config(self):
         print ('\n---------'+str(self))
         self._create_app_config()
-        
+        return
         topo = Topology('test_insert_with_app_config')
         self._add_toolkits(topo, None)
         s = self._create_stream(topo)
@@ -316,11 +306,6 @@ class TestICP(TestDistributed):
     @classmethod
     def setUpClass(self):
         env_chk = True
-        try:
-            print("STREAMS_REST_URL="+str(os.environ['STREAMS_REST_URL']))
-        except KeyError:
-            env_chk = False
-        assert env_chk, "STREAMS_REST_URL environment variable must be set"
         super().setUpClass()    
 
     def setUp(self):
