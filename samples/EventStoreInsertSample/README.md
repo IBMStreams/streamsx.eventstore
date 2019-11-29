@@ -56,6 +56,13 @@ Before submitting the job, you need to apply the values for the submission param
 - **trustStore:** Location of trust store file, for example "opt/clientkeystore"
 - **trustStorePassword:** Set password of the trust store.
 
+
+### Launch to Streams in Cloud Pak for Data
+
+Submit the application bundle and specify the submission parameter, for example the application configuration name and keystore/truststore file:
+
+    streamsx-streamtool --disable-ssl-verify submitjob --P configObject=eventstore --P keyStore=opt/clientkeystore --P trustStore=opt/clientkeystore output/com.ibm.streamsx.eventstore.sample.InsertSample.sab
+
 ## Utilized Toolkits
  - com.ibm.streamsx.eventstore
 
