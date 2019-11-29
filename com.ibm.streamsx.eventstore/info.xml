@@ -24,7 +24,8 @@ This is an overview of changes for major and minor version upgrades. For details
 
 ++ What is changed in version 2.2.1
 
-* Third-party lib updated to resolve security vulnerability CVE-2019-12402 (netty-all: 4.1.42)
+* Client library updated for Db2 EventStore 2.0.0.1
+* Third-party library updated to resolve security vulnerability CVE-2019-12402 (netty-all: 4.1.42)
 
 ++ What is new in version 2.2.0
 
