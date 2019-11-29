@@ -58,6 +58,8 @@ Before submitting the job, you need to apply the values for the submission param
 
 ### Launch to Streams in Cloud Pak for Data
 
+Ensure that the sab has been built with Streams 4.3.1 or later when using optional types.
+
 Submit the application bundle and specify the submission parameter, for example the application configuration name and keystore/truststore file:
 
     streamsx-streamtool --disable-ssl-verify submitjob --P configObject=eventstore --P keyStore=opt/clientkeystore --P trustStore=opt/clientkeystore output/com.ibm.streamsx.eventstore.sample.OptionalTypesSample.sab
