@@ -555,8 +555,9 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 
             if( databaseName == null || databaseName == "" ||
                     tableName == null || tableName == "" ){
-            	tracer.log(TraceLevel.ERROR, "No database or table name was given so we cannot carry out the insert");
-            	throw new IllegalArgumentException("No database or table name was given so we cannot carry out the insert");
+            	
+            	tracer.log(TraceLevel.ERROR, Messages.getString("EVENTSTORE_MISSING_PARAMETER"));
+            	throw new IllegalArgumentException(Messages.getString("EVENTSTORE_MISSING_PARAMETER"));
             }
             else{
             	if (tracer.isInfoEnabled()) {
