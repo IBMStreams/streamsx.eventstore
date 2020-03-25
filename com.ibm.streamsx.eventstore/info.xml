@@ -22,6 +22,10 @@ IBM Db2 Event Store is an in-memory database designed to rapidly ingest and anal
 
 This is an overview of changes for major and minor version upgrades. For details, see the releases in public [https://github.com/IBMStreams/streamsx.eventstore/releases|GitHub].
 
+++ What is changed in version 2.3.2 and 2.3.3
+
+* Globalization support: Messages updated
+
 ++ What is changed in version 2.3.1
 
 * Globalization support: Introduced fallback message for non-translated error message
@@ -36,7 +40,7 @@ This is an overview of changes for major and minor version upgrades. For details
 * Supports globalized messages with unique message IDs
 
 ]]></info:description>
-        <info:version>2.3.2</info:version>
+        <info:version>2.3.3</info:version>
         <info:requiredProductVersion>4.3.0.0</info:requiredProductVersion>
     </info:identity>
     <info:dependencies/>
