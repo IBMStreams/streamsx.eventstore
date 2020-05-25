@@ -1,0 +1,46 @@
+/*
+** Copyright (C) 2019  International Business Machines Corporation
+** All Rights Reserved
+*/
+namespace com.ibm.streamsx.eventstore.test;
+
+use com.ibm.streamsx.eventstore::*;
+
+
+public composite InsertTest () {
+	param
+		expression<int32>   $batchSize: 100000;
+		expression<rstring> $databaseName: "EVENTDB";
+		expression<rstring> $tableName: "SimpleTab";
+		expression<rstring> $schemaName : "dummy";
+		expression<rstring> $eventStoreUser : "dummy";
+		expression<rstring> $eventStorePassword : "dummy";
+
+	type
+	        SimpleType = int32 id, int64 id2, rstring name;
+
+	graph
+		
+		stream<SimpleType> Beacon = spl.utility::Beacon() {
+                        param
+				period: 0.000005;
+			output
+				Beacon:	id=(int32)IterationCount(), id2=(int64)IterationCount(), name='SAMPLE';
+		}
+
+		// The output streams contains an attribute "_Inserted_" to indicate the result of the insert (true or false).
+		() as EventStoreSink = com.ibm.streamsx.eventstore::EventStoreSink(Beacon) {
+			param
+				batchSize: $batchSize;
+				connectionString: "__NOT_CONNECTED_MODE__";
+				databaseName: $databaseName;
+				primaryKey: 'id';
+				partitioningKey: 'id';
+				tableName: $tableName;
+				schemaName: $schemaName;
+				eventStoreUser: $eventStoreUser;
+				eventStorePassword: $eventStorePassword;
+		}
+
+
+}

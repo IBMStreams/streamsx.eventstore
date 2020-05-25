@@ -1,0 +1,8 @@
+/output/
+/.toolkitList
+/toolkit.xml
+/.apt_generated/
+/doc/
+/.classpath
+/opt/
+mem*
