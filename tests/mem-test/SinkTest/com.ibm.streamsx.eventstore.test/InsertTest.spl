@@ -9,7 +9,7 @@ use com.ibm.streamsx.eventstore::*;
 
 public composite InsertTest () {
 	param
-		expression<int32>   $batchSize: 100000;
+		expression<int32>   $batchSize: 100;
 		expression<rstring> $databaseName: "EVENTDB";
 		expression<rstring> $tableName: "SimpleTab";
 		expression<rstring> $schemaName : "dummy";
@@ -24,6 +24,7 @@ public composite InsertTest () {
 		stream<SimpleType> Beacon = spl.utility::Beacon() {
                         param
 				period: 0.000005;
+				//iterations: 10000; // use iterations and smaller batchSize when running standalone test and environment variable IBM_MALLOCTRACE=TRUE
 			output
 				Beacon:	id=(int32)IterationCount(), id2=(int64)IterationCount(), name='SAMPLE';
 		}
@@ -31,6 +32,7 @@ public composite InsertTest () {
 		// The output streams contains an attribute "_Inserted_" to indicate the result of the insert (true or false).
 		() as EventStoreSink = com.ibm.streamsx.eventstore::EventStoreSink(Beacon) {
 			param
+				vmArg : "-Xmx4096m";
 				batchSize: $batchSize;
 				connectionString: "__NOT_CONNECTED_MODE__";
 				databaseName: $databaseName;
