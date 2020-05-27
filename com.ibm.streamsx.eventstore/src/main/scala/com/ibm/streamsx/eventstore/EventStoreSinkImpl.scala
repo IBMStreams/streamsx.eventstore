@@ -78,6 +78,7 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
   var context: EventContext = null
   var tableToInsert : ResolvedTableSchema = null
   var conversionFunctionMap : scala.collection.mutable.HashMap[Int,(Tuple, Int) => Any] = null
+  var notConnectedMode = false
 
   import org.apache.log4j.{Level, LogManager}
   val logLevel = LogManager.getRootLogger().getLevel()
@@ -93,7 +94,10 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
     LogManager.getLogger("com.ibm.event").setLevel(Level.ERROR)
     LogManager.getLogger("io.netty").setLevel(Level.OFF)
   }
-
+  if( connectionString == "__NOT_CONNECTED_MODE__" ){
+     notConnectedMode = true
+  }
+  else {
  try {
      connectToDatabase(true)
 
@@ -138,6 +142,7 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
 	throw e
      }
   }
+ } 
 
   // This routine is used to connect or reconnect to the DB
   def connectToDatabase(initialConnect: Boolean) : Unit = {
@@ -395,6 +400,9 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
     val rowBatch = /*tuplebatch.asScala.toIndexedSeq */mkRowIterator(tuplebatch.asScala.toList).toIndexedSeq
     if (log.isTraceEnabled()) {
       log.trace("Inserting a batch ...")
+    }
+    if (notConnectedMode) {
+      return
     }
     val future: Future[InsertResult] = context.batchInsertAsync(tableToInsert, rowBatch)
     if (log.isTraceEnabled()) {

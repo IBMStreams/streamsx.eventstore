@@ -280,8 +280,10 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
 						tracer.log(TraceLevel.DEBUG, "In InsertRunnable call after processbatch with addLeftovers = " + addLeftovers + " with thread " + threadId);
 					}
 				} catch (Exception e) {
-					tracer.log(TraceLevel.ERROR, "Found exception in InsertRunnable thread " + threadId + " message:" + e.getMessage() );
-					throw new RuntimeException(e);
+					if (!shutdown)  {
+						tracer.log(TraceLevel.ERROR, "Found exception in InsertRunnable thread " + threadId + " message:" + e.getMessage() );
+						throw new RuntimeException(e);
+					}
 				} finally {
 					if(inConsistentRegion()) {
 						// if internal buffer has been cleared, notify waiting thread.
