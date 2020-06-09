@@ -215,8 +215,8 @@ class TestDistributed(unittest.TestCase):
 
         self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::OptionalTypesSampleComp", params, '../../samples/EventStoreNullableColumnSample', num_expected, True)
 
-
-    def test_insert_consistent_region(self):
+    # rename to enable it, remove _
+    def _test_insert_consistent_region(self):
         print ('\n---------'+str(self))
         name = 'test_insert_consistent_region'
         topo = Topology(name)
@@ -256,25 +256,26 @@ class TestDistributed(unittest.TestCase):
         schema=StreamSchema('tuple<int32 id, rstring name>').as_tuple()
         return s.map(lambda x : (x,'X'+str(x*2)), schema=schema)
 
-#    def test_insert_udp(self):
-#        print ('\n---------'+str(self))
-#        topo = Topology('test_insert_udp')
-#        self._add_toolkits(topo, None)
-#        s = self._create_stream(topo)
-#        result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
-#        # user-defined parallelism with two channels (two EventStoreSink operators)
-#        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', partitioning_key='id', front_end_connection_flag=self.front_end_connection_flag, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)      
-#        res.print()
-#        #self._build_only('test_insert_udp', topo)
-#        tester = Tester(topo)
-#        tester.run_for(120)
-#        tester.tuple_count(res, 20, exact=True)
-#        cfg = {}
-#        job_config = streamsx.topology.context.JobConfig(tracing='info')
-#        job_config.add(cfg)
-#        cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
-#        tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
-#        print (str(tester.result))
+    # rename to enable it, remove _
+    def _test_insert_udp(self):
+        print ('\n---------'+str(self))
+        topo = Topology('test_insert_udp')
+        self._add_toolkits(topo, None)
+        s = self._create_stream(topo)
+        result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
+        # user-defined parallelism with two channels (two EventStoreSink operators)
+        res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', partitioning_key='id', front_end_connection_flag=self.front_end_connection_flag, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)      
+        res.print()
+        #self._build_only('test_insert_udp', topo)
+        tester = Tester(topo)
+        tester.run_for(120)
+        tester.tuple_count(res, 20, exact=True)
+        cfg = {}
+        job_config = streamsx.topology.context.JobConfig(tracing='info')
+        job_config.add(cfg)
+        cfg[streamsx.topology.context.ConfigParams.SSL_VERIFY] = False
+        tester.test(self.test_ctxtype, cfg, always_collect_logs=True)
+        print (str(tester.result))
 
 
     def test_insert_with_app_config(self):
