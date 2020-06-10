@@ -6,6 +6,9 @@ Install the latest streamsx package with pip, a package manager for Python, by e
 
     pip install --user --upgrade streamsx
 
+## Retrieve clientkeystore file and password from Cloud Pak for Data
+
+    ./service.sh <SERVICENAME> <IP> <PORT> <NAMESPACE> <USER> <PASSWORD>
 
 ### Configure the connection to Event Store database
 
