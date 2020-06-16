@@ -1,6 +1,10 @@
 # Changes
 ==========
 
+## v2.4.0:
+
+* [#106](https://github.com/IBMStreams/streamsx.eventstore/issues/106) Client library updated for Db2 EventStore 2.0.0.5
+
 ## v2.3.4:
 
 * [#104](https://github.com/IBMStreams/streamsx.eventstore/issues/104) Client library updated for Db2 EventStore to resolve memory leak issue
