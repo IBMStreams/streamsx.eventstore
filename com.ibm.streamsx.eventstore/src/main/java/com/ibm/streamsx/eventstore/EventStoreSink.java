@@ -191,7 +191,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     public static final long CONSISTENT_REGION_DRAIN_WAIT_TIME = 180000;
     
     private boolean isInsertSpeedMetricSet = false;
-    ArrayList<Long> insertTimes = new ArrayList<Long>();
+    ArrayList<Long> insertTimes = null;
     
 	// Initialize the metrics
     @CustomMetric (kind = Metric.Kind.COUNTER, name = "nActiveInserts", description = "Number of active insert requests")
@@ -307,7 +307,7 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     public synchronized void initialize(OperatorContext context)
             throws Exception {
         super.initialize(context);
-
+        insertTimes = new ArrayList<Long>();
         // Initialize the operator information from scratch
         startOperatorSetup(context, 0L, 0L);
     }
@@ -1089,32 +1089,40 @@ public class EventStoreSink extends AbstractOperator implements StateHandler {
     }
     
 	public void updateInsertSpeedMetrics (long insertDuration) {
-		if (false == isInsertSpeedMetricSet) {
-			// set initial values after first upload
-			this.lowestInsertTime.setValue(insertDuration);
-			this.highestInsertTime.setValue(insertDuration);
-			this.averageInsertTime.setValue(insertDuration);
-			isInsertSpeedMetricSet = true;
-		}
-		else {
-			// metrics for insert duration (time to insert a batch)
-			if (insertDuration < this.lowestInsertTime.getValue()) {
-				this.lowestInsertTime.setValue(insertDuration);
+		try {
+			if ((0 != insertDuration) && (!shutdown)) {
+				if (false == isInsertSpeedMetricSet) {
+					// set initial values after first upload
+					this.lowestInsertTime.setValue(insertDuration);
+					this.highestInsertTime.setValue(insertDuration);
+					this.averageInsertTime.setValue(insertDuration);
+					isInsertSpeedMetricSet = true;
+				}
+				else {
+					// metrics for insert duration (time to insert a batch)
+					if (insertDuration < this.lowestInsertTime.getValue()) {
+						this.lowestInsertTime.setValue(insertDuration);
+					}
+					if (insertDuration > this.highestInsertTime.getValue()) {
+						this.highestInsertTime.setValue(insertDuration);
+					}
+					insertTimes.add(insertDuration);
+					// calculate average
+					long total = 0;
+					for(int i = 0; i < insertTimes.size(); i++) {
+						total += insertTimes.get(i);
+					}
+					if ((0 != total) && (0 < insertTimes.size())) {
+						this.averageInsertTime.setValue(total / insertTimes.size());
+					}
+					// avoid that arrayList is growing unlimited
+					if (insertTimes.size() > 10000) {
+						insertTimes.remove(0);
+					}
+				}
 			}
-			if (insertDuration > this.highestInsertTime.getValue()) {
-				this.highestInsertTime.setValue(insertDuration);
-			}
-			insertTimes.add(insertDuration);
-			// calculate average
-			long total = 0;
-			for(int i = 0; i < insertTimes.size(); i++) {
-			    total += insertTimes.get(i);
-			}
-			this.averageInsertTime.setValue(total / insertTimes.size());
-			// avoid that arrayList is growing unlimited
-			if (insertTimes.size() > 10000) {
-				insertTimes.remove(0);
-			}
+		} catch (Exception e) {
+			tracer.log(TraceLevel.ERROR, "Failed to update metrics: " + e.getMessage());
 		}
 	}   
     
