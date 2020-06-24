@@ -96,7 +96,9 @@ class TestDistributed(unittest.TestCase):
         topo = Topology(name)
         self._add_toolkits(topo, toolkit_name)
         if self.es_keystore is not None:
-            self._add_store_file(topo, self.es_keystore)	
+            self._add_store_file(topo, self.es_keystore)
+
+        #streamsx.spl.toolkit.add_toolkit_dependency(topo, 'com.ibm.streamsx.eventstore', '[2.4.1,3.0.0)')
 
         params = parameters
         # Call the test composite
@@ -215,6 +217,26 @@ class TestDistributed(unittest.TestCase):
 
         self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::OptionalTypesSampleComp", params, '../../samples/EventStoreNullableColumnSample', num_expected, True)
 
+    def test_parallel_single_pe(self):
+        print ('\n---------'+str(self))
+        name = 'test_parallel_single_pe'
+        if (streams_install_env_var()):
+            self._index_tk(self.samples_location)
+        num_expected = 100
+        batch_size = 50
+        params = {'connectionString': self.connection, 'databaseName': self.database, 'tableName': 'StreamsSample2', 'batchSize':batch_size, 'frontEndConnectionFlag':self.front_end_connection_flag, 'iterations': num_expected}
+        if self.es_password and self.es_user is not None:
+            params['eventStoreUser'] = self.es_user
+            params['eventStorePassword'] = self.es_password
+        if self.es_keystore_password and self.es_truststore_password is not None:
+            params['keyStore'] = 'opt/clientkeystore'
+            params['trustStore'] = 'opt/clientkeystore'
+            params['keyStorePassword'] = self.es_keystore_password
+            params['trustStorePassword'] = self.es_truststore_password
+
+        self._build_launch_validate(name, "com.ibm.streamsx.eventstore.sample::ParallelSampleComp", params, 'udp.test', num_expected, True)
+
+
     # rename to enable it, remove _
     def _test_insert_consistent_region(self):
         print ('\n---------'+str(self))
@@ -256,15 +278,17 @@ class TestDistributed(unittest.TestCase):
         schema=StreamSchema('tuple<int32 id, rstring name>').as_tuple()
         return s.map(lambda x : (x,'X'+str(x*2)), schema=schema)
 
-    # rename to enable it, remove _
-    def _test_insert_udp(self):
+    # each channel isolation, each EventStoreSink in an own PE
+    def test_insert_udp(self):
         print ('\n---------'+str(self))
         topo = Topology('test_insert_udp')
         self._add_toolkits(topo, None)
+        topo.add_pip_package('streamsx.eventstore')
         s = self._create_stream(topo)
         result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
         # user-defined parallelism with two channels (two EventStoreSink operators)
         res = es.insert(s.parallel(2), table='SampleTable', database=self.database, connection=self.connection, schema=result_schema, primary_key='id', partitioning_key='id', front_end_connection_flag=self.front_end_connection_flag, user=self.es_user, password=self.es_password, truststore=self.es_truststore, truststore_password=self.es_truststore_password, keystore=self.es_keystore, keystore_password=self.es_keystore_password)      
+        res = res.end_parallel()
         res.print()
         #self._build_only('test_insert_udp', topo)
         tester = Tester(topo)
@@ -281,9 +305,9 @@ class TestDistributed(unittest.TestCase):
     def test_insert_with_app_config(self):
         print ('\n---------'+str(self))
         self._create_app_config()
-        return
         topo = Topology('test_insert_with_app_config')
         self._add_toolkits(topo, None)
+        topo.add_pip_package('streamsx.eventstore')
         s = self._create_stream(topo)
         result_schema = StreamSchema('tuple<int32 id, rstring name, boolean _Inserted_>')
         res = es.insert(s, config='eventstore', table='SampleTable', schema=result_schema, primary_key='id', partitioning_key='id', front_end_connection_flag=self.front_end_connection_flag, truststore=self.es_truststore, keystore=self.es_keystore)      
