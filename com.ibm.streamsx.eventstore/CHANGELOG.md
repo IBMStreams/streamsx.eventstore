@@ -1,6 +1,10 @@
 # Changes
 ==========
 
+## v2.4.1:
+
+* [#108](https://github.com/IBMStreams/streamsx.eventstore/issues/108) Improved error handling in EventStoreSink.updateInsertSpeedMetrics
+
 ## v2.4.0:
 
 * [#106](https://github.com/IBMStreams/streamsx.eventstore/issues/106) Client library updated for Db2 EventStore 2.0.0.5
