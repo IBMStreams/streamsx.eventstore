@@ -19,6 +19,9 @@ Enterprise 1.1.3             | [1.2.0](https://github.com/IBMStreams/streamsx.ev
 Developer 1.1.4	            | [1.2.0](https://github.com/IBMStreams/streamsx.eventstore/releases/tag/v1.2.0-Developer-v1.1.4)  |  [1.1.0](https://pypi.org/project/streamsx.eventstore/1.1.0/) |
 
 
+## Changes
+For the recent changes per release, please see [CHANGELOG.MD](com.ibm.streamsx.eventstore/CHANGELOG.md).
+
 ## Setting up IBM Db2 Event Store
 
 For more information on installing IBM Db2 Event Store, see:
