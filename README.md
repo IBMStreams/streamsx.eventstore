@@ -20,7 +20,7 @@ Developer 1.1.4	            | [1.2.0](https://github.com/IBMStreams/streamsx.eve
 
 
 ## Changes
-For the recent changes per release, please see [CHANGELOG.MD](com.ibm.streamsx.eventstore/CHANGELOG.md).
+[CHANGELOG.MD](com.ibm.streamsx.eventstore/CHANGELOG.md)
 
 ## Setting up IBM Db2 Event Store
 
