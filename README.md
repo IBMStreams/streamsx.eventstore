@@ -29,7 +29,7 @@ For more information on installing IBM Db2 Event Store, see:
 
 ## Documentation
 
-* [Connect to Db2 Event Store 2.0](https://developer.ibm.com/streamsdev/2019/07/10/connect-to-db2-event-store/)
+* [Connect to Db2 Event Store 2.0](https://community.ibm.com/community/user/cloudpakfordata/viewdocument/connect-to-db2-event-store)
 * [Build the toolkit](BUILD.md)
 * [SPLDoc 2.x](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc2.0/html/)
 * [SPLDoc 1.x](https://ibmstreams.github.io/streamsx.eventstore/doc/spldoc1.0/html/)
