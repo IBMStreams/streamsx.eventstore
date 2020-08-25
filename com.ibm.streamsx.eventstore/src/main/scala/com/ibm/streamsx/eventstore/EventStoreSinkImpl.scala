@@ -480,7 +480,7 @@ class EventStoreSinkImpl(databaseName : String, tableName: String, schemaName: S
       case "optional<float32>" => { val value: Float = getOptionalValue(tuple, attr, null.asInstanceOf[Float]); value }
       case "float64" => { val value: Double = tuple.getDouble(attr.getIndex); value }
       case "optional<float64>" => { val value: Double = getOptionalValue(tuple, attr, null.asInstanceOf[Double]); value }
-      //case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
+      case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
       case "timestamp" => { val value: java.sql.Timestamp = new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime()); value }
       case "optional<timestamp>" => { val value: java.sql.Timestamp = getOptionalTimestamp(tuple, attr); value }
       case "rstring" | "ustring" => { val value: String = tuple.getString(attr.getIndex); value }
@@ -675,7 +675,7 @@ object ConversionAPIObject {
       case "int64" | "uint64" | "optional<int64>" | "optional<uint64>" => LongType
       case "float32" | "optional<float32>" => FloatType
       case "float64" | "optional<float64>" => DoubleType
-      //case "decimal32" | "decimal64" | "decimal128" => DecimalType
+      case "decimal32" | "decimal64" | "decimal128" => DecimalType
       case "timestamp" | "optional<timestamp>" => TimestampType
       case "rstring" | "ustring" | "optional<rstring>" | "optional<ustring>" => StringType
       //case "blob" => tuple.getBlob(attr.getIndex)
@@ -747,7 +747,7 @@ object ConversionAPIObject {
       case "optional<float32>" => { val value: Float = getOptionalValue(tuple, attr, null.asInstanceOf[Float]); value }
       case "float64" => { val value: Double = tuple.getDouble(attr.getIndex); value }
       case "optional<float64>" => { val value: Double = getOptionalValue(tuple, attr, null.asInstanceOf[Double]); value }
-      //case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
+      case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
       case "timestamp" => { val value: java.sql.Timestamp = new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime()); value }
       case "optional<timestamp>" => { val value: java.sql.Timestamp = getOptionalTimestamp(tuple, attr); value }
       case "rstring" | "ustring" => { val value: String = tuple.getString(attr.getIndex); value }
@@ -779,7 +779,7 @@ object ConversionAPIObject {
           case "int64" | "uint64" | "optional<int64>" | "optional<uint64>" => { val f = (tuple: Tuple, i: Int) => {tuple.getLong(i)}; f }
           case "float32" | "optional<float32>" => { val f = (tuple: Tuple, i: Int) => {tuple.getFloat(i)}; f }
           case "float64" | "optional<float64>" => { val f = (tuple: Tuple, i: Int) => {tuple.getDouble(i)}; f }
-          //case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
+          case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
           case "timestamp" | "optional<timestamp>" => { val f = (tuple: Tuple, i: Int) => {new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime())}; f }
           case "rstring" | "ustring" | "optional<rstring>" | "optional<ustring>" => { val f = (tuple: Tuple, i: Int) => {tuple.getString(i)}; f }
           //case "blob" => tuple.getBlob(attr.getIndex)
