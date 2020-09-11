@@ -22,6 +22,10 @@ IBM Db2 Event Store is an in-memory database designed to rapidly ingest and anal
 
 This is an overview of changes for major and minor version upgrades. For details, see the releases in public [https://github.com/IBMStreams/streamsx.eventstore/releases|GitHub].
 
+++ What is changed in version 2.4.2
+
+* Third-party library updated to resolve security vulnerability CVE-2020-11612 (netty-all: 4.1.52.Final)
+
 ++ What is changed in version 2.4.1
 
 * Improved error handling in EventStoreSink.updateInsertSpeedMetrics
@@ -52,7 +56,7 @@ This is an overview of changes for major and minor version upgrades. For details
 * Supports globalized messages with unique message IDs
 
 ]]></info:description>
-        <info:version>2.4.1</info:version>
+        <info:version>2.4.2</info:version>
         <info:requiredProductVersion>4.3.0.0</info:requiredProductVersion>
     </info:identity>
     <info:dependencies/>
