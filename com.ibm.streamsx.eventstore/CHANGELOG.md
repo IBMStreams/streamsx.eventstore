@@ -1,6 +1,9 @@
 # Changes
 ==========
 
+## v2.5.0:
+* [#114](https://github.com/IBMStreams/streamsx.eventstore/issues/112) Client library updated for Db2 EventStore, Spark 2.4.6
+
 ## v2.4.2:
 * [#112](https://github.com/IBMStreams/streamsx.eventstore/issues/112) Third-party library updated to resolve security vulnerability CVE-2020-11612 (netty-all: 4.1.52.Final)
 
