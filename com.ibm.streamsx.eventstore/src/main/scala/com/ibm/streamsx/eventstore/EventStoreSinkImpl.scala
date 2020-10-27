@@ -675,7 +675,7 @@ object ConversionAPIObject {
       case "int64" | "uint64" | "optional<int64>" | "optional<uint64>" => LongType
       case "float32" | "optional<float32>" => FloatType
       case "float64" | "optional<float64>" => DoubleType
-      case "decimal32" | "decimal64" | "decimal128" => DecimalType
+      case "decimal32" | "decimal64" | "decimal128" | "optional<decimal32>" | "optional<decimal64>" | "optional<decimal128>" => DecimalType
       case "timestamp" | "optional<timestamp>" => TimestampType
       case "rstring" | "ustring" | "optional<rstring>" | "optional<ustring>" => StringType
       //case "blob" => tuple.getBlob(attr.getIndex)
@@ -779,7 +779,7 @@ object ConversionAPIObject {
           case "int64" | "uint64" | "optional<int64>" | "optional<uint64>" => { val f = (tuple: Tuple, i: Int) => {tuple.getLong(i)}; f }
           case "float32" | "optional<float32>" => { val f = (tuple: Tuple, i: Int) => {tuple.getFloat(i)}; f }
           case "float64" | "optional<float64>" => { val f = (tuple: Tuple, i: Int) => {tuple.getDouble(i)}; f }
-          case "decimal32" | "decimal64" | "decimal128" => tuple.getBigDecimal(attr.getIndex)
+          case "decimal32" | "decimal64" | "decimal128" | "optional<decimal32>" | "optional<decimal64>" | "optional<decimal128>" => { val f = (tuple: Tuple, i: Int) => {tuple.getBigDecimal(i)}; f }
           case "timestamp" | "optional<timestamp>" => { val f = (tuple: Tuple, i: Int) => {new java.sql.Timestamp(tuple.getTimestamp(attr.getIndex).getTime())}; f }
           case "rstring" | "ustring" | "optional<rstring>" | "optional<ustring>" => { val f = (tuple: Tuple, i: Int) => {tuple.getString(i)}; f }
           //case "blob" => tuple.getBlob(attr.getIndex)
