@@ -8,10 +8,10 @@
 	<classpathentry kind="lib" path="opt/downloaded/scala-library-2.11.8.jar"/>
 	<classpathentry kind="lib" path="opt/downloaded/scala-parser-combinators_2.11-1.0.1.jar"/>
 	<classpathentry kind="lib" path="opt/downloaded/scala-reflect-2.11.8.jar"/>
-	<classpathentry kind="lib" path="opt/downloaded/spark-catalyst_2.11-2.3.3.jar"/>
-	<classpathentry kind="lib" path="opt/downloaded/spark-core_2.11-2.3.3.jar"/>
-	<classpathentry kind="lib" path="opt/downloaded/spark-sql_2.11-2.3.3.jar"/>
-	<classpathentry kind="lib" path="opt/downloaded/spark-tags_2.11-2.3.3.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/spark-catalyst_2.11-2.4.6.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/spark-core_2.11-2.4.6.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/spark-sql_2.11-2.4.6.jar"/>
+	<classpathentry kind="lib" path="opt/downloaded/spark-tags_2.11-2.4.6.jar"/>
 	<classpathentry kind="lib" path="opt/ibm-event_2.11-1.0.jar"/>
 	<classpathentry kind="lib" path="impl/lib/com.ibm.streamsx.eventstore.jar"/>
 	<classpathentry kind="output" path="bin"/>
