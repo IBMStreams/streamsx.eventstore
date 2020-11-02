@@ -1,6 +1,9 @@
 # Changes
 ==========
 
+## v2.4.3:
+* [#118](https://github.com/IBMStreams/streamsx.eventstore/issues/118) Revert changes from release v2.4.2 (netty-all: 4.1.42.Final)
+
 ## v2.4.2:
 * [#112](https://github.com/IBMStreams/streamsx.eventstore/issues/112) Third-party library updated to resolve security vulnerability CVE-2020-11612 (netty-all: 4.1.52.Final)
 
