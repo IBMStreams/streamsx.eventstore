@@ -1,4 +1,4 @@
-#Wed Jun 24 11:48:31 UTC 2020
+#Mon Nov 02 15:30:22 UTC 2020
 copytosourcelist=
 hreftargetslist=dita/tk$com.ibm.streamsx.eventstore/op$com.ibm.streamsx.eventstore$EventStoreSink$1.xml,dita/tk$com.ibm.streamsx.eventstore/op$com.ibm.streamsx.eventstore$EventStoreSink.xml,dita/tk$com.ibm.streamsx.eventstore/tk$com.ibm.streamsx.eventstore$8.xml,dita/tk$com.ibm.streamsx.eventstore/tk$com.ibm.streamsx.eventstore.xml,dita/tk$com.ibm.streamsx.eventstore/tk$com.ibm.streamsx.eventstore$1.xml,dita/tk$com.ibm.streamsx.eventstore/op$com.ibm.streamsx.eventstore$EventStoreSink$3.xml,dita/tk$com.ibm.streamsx.eventstore/tk$com.ibm.streamsx.eventstore$6.xml,dita/toolkits/ix$Namespace.xml,dita/tk$com.ibm.streamsx.eventstore/op$com.ibm.streamsx.eventstore$EventStoreSink$2.xml,dita/tk$com.ibm.streamsx.eventstore/tk$com.ibm.streamsx.eventstore$7.xml,dita/toolkits/ix$Operator.xml,dita/tk$com.ibm.streamsx.eventstore/ix$Namespace.xml,dita/tk$com.ibm.streamsx.eventstore/tk$com.ibm.streamsx.eventstore$4.xml,dita/tk$com.ibm.streamsx.eventstore/op$com.ibm.streamsx.eventstore$EventStoreSink$5.xml,dita/tk$com.ibm.streamsx.eventstore/op$com.ibm.streamsx.eventstore$EventStoreSink$4.xml,dita/tk$com.ibm.streamsx.eventstore/ix$Operator.xml,dita/tk$com.ibm.streamsx.eventstore/tk$com.ibm.streamsx.eventstore$5.xml,dita/toolkits/toolkits.xml,dita/tk$com.ibm.streamsx.eventstore/tk$com.ibm.streamsx.eventstore$2.xml,dita/tk$com.ibm.streamsx.eventstore/ns$com.ibm.streamsx.eventstore.xml,dita/references/OperatorModel.xml,dita/tk$com.ibm.streamsx.eventstore/tk$com.ibm.streamsx.eventstore$3.xml
 fullditatopicfile=fullditatopic.list
@@ -37,7 +37,7 @@ codereffile=coderef.list
 keylist=
 codereflist=
 user.input.file.listfile=usr.input.file.list
-user.input.dir=/home/streamsadmin/hostdir/git-public/streamsx.eventstore/com.ibm.streamsx.eventstore/doc/en_US/spldoc
+user.input.dir=/home/streamsadmin/hostdir/git-public/_gh-pages_/streamsx.eventstore/com.ibm.streamsx.eventstore/doc/en_US/spldoc
 uplevels=../
 tempdirToinputmapdir.relative.value=dita/
 conrefpushfile=conrefpush.list
