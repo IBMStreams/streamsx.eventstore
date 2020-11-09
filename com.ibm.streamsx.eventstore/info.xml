@@ -65,7 +65,7 @@ This is an overview of changes for major and minor version upgrades. For details
 * Supports globalized messages with unique message IDs
 
 ]]></info:description>
-        <info:version>2.5.0.beta</info:version>
+        <info:version>2.5.0</info:version>
         <info:requiredProductVersion>4.3.0.0</info:requiredProductVersion>
     </info:identity>
     <info:dependencies/>
