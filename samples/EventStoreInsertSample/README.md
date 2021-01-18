@@ -8,7 +8,7 @@ The application inserts 100 rows into a table with a default batch size of 50 ro
 The output stream of the EventStoreSink operator contains an attribute "_Inserted_" to indicate the result of the insert (true or false).
 In the console log you can verify the dumps of these tuples.
 
-## Use
+## Prepare for SSL connection
 
 ### Add the truststore/keystore file
 
