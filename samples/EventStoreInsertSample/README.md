@@ -13,12 +13,19 @@ In the console log you can verify the dumps of these tuples.
 ### Add the truststore/keystore file
 
 SSL connection is enabled by default in Event Store 2.0.
-You need to get the clientkeystore file and corresponding password from the Event Store Server.
 
-* Create a directory named "opt" in the project directory
-* Copy the "clientkeystore" file into the "opt" directory of this sample project to ensure that this file is part of the application bundle.
+You need to get the `clientkeystore` file **and corresponding password** from the Event Store Server (Cloud Pak for Data).
 
-Set the parameters **trustStore** and **keyStore** to "opt/clientkeystore". The operator will read this file at runtime.
+* Create a directory named `opt` in the project directory
+* Copy the `clientkeystore` file into the "opt" directory of this sample project to ensure that this file is part of the application bundle.
+
+Set the parameters **trustStore** and **keyStore** to `opt/clientkeystore`. The operator will read this file at runtime.
+
+### Retrieve clientkeystore file and password from Cloud Pak for Data
+
+    ./service.sh <SERVICENAME> <IP> <PORT> <NAMESPACE> <USER> <PASSWORD>
+
+Find the script `service.sh` here: https://github.com/IBMStreams/streamsx.eventstore/blob/develop/tests/spl-test/service.sh
 
 ### Build from command line
 
