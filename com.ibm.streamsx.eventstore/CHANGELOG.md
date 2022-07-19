@@ -1,6 +1,9 @@
 # Changes
 ==========
 
+## v2.5.1:
+* [#120](https://github.com/IBMStreams/streamsx.eventstore/issues/120) Fix the log4j issue
+
 ## v2.5.0:
 * [#117](https://github.com/IBMStreams/streamsx.eventstore/issues/117) Makefiles of sample application prepared for CP4D Streams build service, supports build with [VS Code](https://marketplace.visualstudio.com/items?itemName=IBM.ibm-streams)
 * [#114](https://github.com/IBMStreams/streamsx.eventstore/issues/112) Client library updated for Db2 EventStore 2.0.1.0, Spark 2.4.6
