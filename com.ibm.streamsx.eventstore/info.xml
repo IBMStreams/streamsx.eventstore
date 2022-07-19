@@ -64,8 +64,12 @@ This is an overview of changes for major and minor version upgrades. For details
 
 * Supports globalized messages with unique message IDs
 
+++ What is new in version 2.5.1
+
+* pom.xml file upgraded to use teh slf4j jar files 1.7.36
+
 ]]></info:description>
-        <info:version>2.5.0</info:version>
+        <info:version>2.5.1</info:version>
         <info:requiredProductVersion>4.3.0.0</info:requiredProductVersion>
     </info:identity>
     <info:dependencies/>
